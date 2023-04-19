@@ -260,7 +260,9 @@ class UDPReceiver {
       } else {
         // this can also come from the shutdown, in which case it is not an error.
         // But this way we break out of the loop.
-        wifibroadcast::log::get_default()->warn("Got message length of: {}",message_length);
+        if(receiving){
+          wifibroadcast::log::get_default()->warn("Got message length of: {}",message_length);
+        }
         receiving = false;
       }
     }
