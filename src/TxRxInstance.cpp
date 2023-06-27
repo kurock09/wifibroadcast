@@ -12,10 +12,14 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
     : m_wifi_cards(std::move(wifi_cards)),
       m_radiotap_header(RadiotapHeader::UserSelectableParams{})
 {
+  m_console=wifibroadcast::log::create_or_get("WBTxRx");
   assert(!m_wifi_cards.empty());
   for(const auto& card: m_wifi_cards){
     m_pcap_handles.push_back(PcapTxRx{});
   }
+  m_encryptor=std::make_unique<Encryptor>(std::nullopt);
+  m_encryptor->makeNewSessionKey(m_tx_sess_key_packet.sessionKeyNonce,
+                                m_tx_sess_key_packet.sessionKeyData);
 }
 
 void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
@@ -132,18 +136,26 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   const uint8_t *pkt_payload = parsedPacket->payload;
   const size_t pkt_payload_size = parsedPacket->payloadSize;
 
-  auto radio_port=0;
-
-  if(radio_port==0){
-    // (might) be an openhd session key packet
-
+  if(!parsedPacket->ieee80211Header->isDataFrame()){
+    return ;
   }
-
-  process_received_data_packet(0,pkt,hdr.len);
+  const auto radio_port=parsedPacket->ieee80211Header->getRadioPort();
+  if(radio_port==RADIO_PORT_SESSION_KEY_PACKETS){
+    if (pkt_payload_size != WBSessionKeyPacket::SIZE_BYTES) {
+      m_console->warn("invalid session key packet - size mismatch");
+      return;
+    }
+    WBSessionKeyPacket &sessionKeyPacket = *((WBSessionKeyPacket *) parsedPacket->payload);
+    if (m_decryptor->onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData)) {
+      m_console->debug("Initializing new session.");
+    }
+  }else{
+    process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
+  }
 }
 
 
-void TxRxInstance::process_received_data_packet(uint8_t wlan_idx,
+void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                                 const uint8_t *pkt_payload,
                                                 const size_t pkt_payload_size) {
   std::shared_ptr<std::vector<uint8_t>> decrypted=std::make_shared<std::vector<uint8_t>>(pkt_payload_size-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES);
@@ -155,7 +167,7 @@ void TxRxInstance::process_received_data_packet(uint8_t wlan_idx,
   const auto res=m_decryptor->decrypt2(*nonce,encrypted_data_with_suffix,encrypted_data_with_suffix_len,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
-    on_valid_packet(0,0,decrypted);
+    on_valid_packet(wlan_idx,radio_port,decrypted);
   }
 }
 

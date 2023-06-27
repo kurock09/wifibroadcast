@@ -5,10 +5,12 @@
 #ifndef WIFIBROADCAST_TXRXINSTANCE_H
 #define WIFIBROADCAST_TXRXINSTANCE_H
 
+#include <atomic>
+
+#include "Encryption.hpp"
 #include "RadiotapHeader.hpp"
 #include "RawTransmitter.hpp"
-#include <atomic>
-#include "Encryption.hpp"
+#include "wifibroadcast.hpp"
 
 class TxRxInstance {
  public:
@@ -18,7 +20,7 @@ class TxRxInstance {
    * radiotap_header,ieee_80211_header,nonce (64 bit), encrypted data, encryption prefix
    * A increasing nonce is used for each packet, and is used for packet validation
    * on the receiving side.
-   * @param radioPort used to multiplex more than one data stream
+   * @param radioPort used to multiplex more than one data stream, the radio port is written into the IEE80211 header
    * @param data the packet payload
    * @param data_len the packet payload length
    */
@@ -34,16 +36,19 @@ class TxRxInstance {
   int loop_iter(int rx_index);
 
   void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
-  void process_received_data_packet(uint8_t wlan_idx,const uint8_t *pkt_payload,size_t pkt_payload_size);
+  void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
 
   void on_valid_packet(int wlan_index,uint8_t radio_port,std::shared_ptr<std::vector<uint8_t>> data);
  private:
+  std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header;
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
   int m_highest_rssi_index=0;
+  // Session key used for sending data
+  WBSessionKeyPacket m_tx_sess_key_packet;
  private:
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
@@ -59,6 +64,7 @@ class TxRxInstance {
   std::unique_ptr<std::thread> m_receive_thread;
   std::vector<pollfd> mReceiverFDs;
   std::chrono::steady_clock::time_point m_last_receiver_error_log=std::chrono::steady_clock::now();
+  static constexpr auto RADIO_PORT_SESSION_KEY_PACKETS=25;
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H
