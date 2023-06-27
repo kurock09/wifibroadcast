@@ -11,6 +11,7 @@
 #include "RadiotapHeader.hpp"
 #include "RawTransmitter.hpp"
 #include "wifibroadcast.hpp"
+#include "SeqNrHelper.hpp"
 
 /**
  * Wraps one or more wifi card in monitor mode
@@ -63,7 +64,8 @@ class TxRxInstance {
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
   uint16_t m_ieee80211_seq = 0;
-  uint64_t m_nonce=0;
+  //uint64_t m_nonce=0;
+  uint16_t m_nonce=0;
   int m_highest_rssi_index=0;
   // Session key used for sending data
   WBSessionKeyPacket m_tx_sess_key_packet;
@@ -83,6 +85,8 @@ class TxRxInstance {
   std::vector<pollfd> mReceiverFDs;
   std::chrono::steady_clock::time_point m_last_receiver_error_log=std::chrono::steady_clock::now();
   static constexpr auto RADIO_PORT_SESSION_KEY_PACKETS=25;
+  // for calculating the packet loss on the rx side
+  seq_nr::Helper m_seq_nr_helper;
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H

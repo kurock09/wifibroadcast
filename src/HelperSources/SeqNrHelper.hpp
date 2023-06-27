@@ -53,6 +53,7 @@ class Helper{
     m_last_seq_nr=seq_nr;
     recalculate_loss_if_needed();
   }
+ private:
   // recalculate the loss in percentage in fixed intervals
   // resets the received and missing packet count
   void recalculate_loss_if_needed(){
@@ -74,7 +75,6 @@ class Helper{
       m_n_missing_packets=0;
     }
   }
- private:
   void store_gap(int gap_size){
     m_gaps.push_back(gap_size);
     const auto elasped=std::chrono::steady_clock::now()-m_last_log;

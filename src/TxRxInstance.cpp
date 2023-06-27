@@ -180,6 +180,11 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     on_valid_packet(wlan_idx,radio_port,decrypted);
+    if(wlan_idx==0){
+      uint16_t tmp=*nonce;
+      m_seq_nr_helper.on_new_sequence_number(tmp);
+      m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
+    }
   }else{
     m_console->debug("Got non-wb packet {}",radio_port);
   }
