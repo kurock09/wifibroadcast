@@ -81,6 +81,18 @@ class Encryptor {
     assert(encryptedData.size() == ciphertext_len);
     return encryptedData;
   }
+  int encrypt2(const uint64_t& nonce,
+                const uint8_t *src,
+                std::size_t src_len,
+                uint8_t* dest){
+    long long unsigned int ciphertext_len;
+    crypto_aead_chacha20poly1305_encrypt(dest, &ciphertext_len,
+                                        src, src_len,
+                                         (uint8_t *)nullptr, 0,
+                                         nullptr,
+                                         (uint8_t *) nonce, session_key.data());
+    return (int)ciphertext_len;
+  }
  private:
   // tx->rx keypair
   std::array<uint8_t, crypto_box_SECRETKEYBYTES> tx_secretkey{};
@@ -149,7 +161,7 @@ class Decryptor {
   // returns decrypted data on success
   // NOTE: Don't forget to substract the "extradata" from raw received packet (to get payload)
   template<class T>
-  std::optional<std::vector<uint8_t>> decryptPacket(const uint64_t nonce,
+  std::optional<std::vector<uint8_t>> decryptPacket(const uint64_t& nonce,
                                                     const uint8_t *encryptedPayload,
                                                     std::size_t encryptedPayloadSize,
                                                     const T &ad) {
@@ -171,6 +183,15 @@ class Decryptor {
     }
     assert(decrypted.size() == decrypted_len);
     return decrypted;
+  }
+  int decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest,int dest_len){
+    unsigned long long mlen;
+    int res=crypto_aead_chacha20poly1305_decrypt(dest, &mlen,
+                                                   nullptr,
+                                                   encrypted, encrypted_size,
+                                                   nullptr,0,
+                                                   (uint8_t *) (&nonce), session_key.data());
+    return res;
   }
 };
 

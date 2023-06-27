@@ -29,6 +29,7 @@ target_sources(wifibroadcast PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/src/WBReceiver.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/WBTransmitter.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/ForeignPacketsReceiver.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/TxRxInstance.cpp
         )
 target_include_directories(wifibroadcast PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/src/HelperSources
