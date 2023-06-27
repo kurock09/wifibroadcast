@@ -59,6 +59,15 @@ class TxRxInstance {
    * Really verbose logs (warning: Spams console)
    */
    void set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx);
+
+   // These are for updating injection parameters at run time. They will be applied on the next injected packet.
+   // They are generally thread-safe. See RadiotapHeader for more information on what these parameters do.
+   void tx_update_mcs_index(uint8_t mcs_index);
+   void tx_update_channel_width(int width_mhz);
+   void tx_update_stbc(int stbc);
+   void tx_update_guard_interval(bool short_gi);
+   void tx_update_ldpc(bool ldpc);
+
  private:
   void announce_session_key_if_needed();
   void send_session_key();;
@@ -70,10 +79,14 @@ class TxRxInstance {
   void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
 
   void on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len);
+  // After calling this method, the injected packets will use a different radiotap header
+  // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
+  void threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
  private:
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
   std::chrono::steady_clock::time_point m_session_key_announce_ts{};
+  RadiotapHeader::UserSelectableParams m_radioTapHeaderParams{};
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
   bool m_advanced_debugging_rx = false;
