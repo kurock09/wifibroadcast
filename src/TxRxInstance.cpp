@@ -168,6 +168,8 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     on_valid_packet(wlan_idx,radio_port,decrypted);
+  }else{
+    m_console->debug("Got non-wb packet {}",radio_port);
   }
 }
 
