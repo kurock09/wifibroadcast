@@ -74,6 +74,10 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
   announce_session_key_if_needed();
 }
 
+void TxRxInstance::rx_register_callback(TxRxInstance::OUTPUT_DATA_CALLBACK cb) {
+  m_output_cb=std::move(cb);
+}
+
 void TxRxInstance::loop_receive_packets() {
   while (true){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
@@ -172,16 +176,17 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                                 const size_t pkt_payload_size) {
   std::shared_ptr<std::vector<uint8_t>> decrypted=std::make_shared<std::vector<uint8_t>>(pkt_payload_size-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES);
   // nonce comes first
-  auto* nonce=(uint64_t*) pkt_payload;
+  auto* nonce_p=(uint64_t*) pkt_payload;
+  uint64_t nonce=*nonce_p;
   // after that, we have the encrypted data (and the encryption suffix)
   const uint8_t* encrypted_data_with_suffix=pkt_payload+sizeof(uint64_t);
   const auto encrypted_data_with_suffix_len = pkt_payload_size-sizeof(uint64_t);
-  const auto res=m_decryptor->decrypt2(*nonce,encrypted_data_with_suffix,encrypted_data_with_suffix_len,
+  const auto res=m_decryptor->decrypt2(nonce,encrypted_data_with_suffix,encrypted_data_with_suffix_len,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
-    on_valid_packet(wlan_idx,radio_port,decrypted);
+    on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
     if(wlan_idx==0){
-      uint16_t tmp=*nonce;
+      uint16_t tmp=nonce;
       m_seq_nr_helper.on_new_sequence_number(tmp);
       m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
     }
@@ -190,8 +195,12 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
   }
 }
 
-void TxRxInstance::on_valid_packet(int wlan_index, uint8_t radio_port,std::shared_ptr<std::vector<uint8_t>> data) {
-  m_console->debug("Got valid packet {} {}",radio_port,data->size());
+void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len) {
+  if(m_output_cb!= nullptr){
+    m_output_cb(nonce,wlan_index,radioPort,data,data_len);
+  }else{
+    m_console->debug("Got valid packet nonce:{} wlan_idx:{} radio_port:{} size:{}",nonce,wlan_index,radioPort,data_len);
+  }
 }
 
 void TxRxInstance::start_receiving() {

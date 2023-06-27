@@ -40,12 +40,15 @@ class TxRxInstance {
   void tx_inject_packet(uint8_t radioPort,const uint8_t* data,int data_len);
 
   // register a callback that is called every time a valid packet (for the given radio port) is received
-  void rx_register_callback(const uint8_t radioPort,void* data){
-
-  }
+  /**
+   * Callback that is called every time a valid packet has been received
+   * (valid = has been validated and decrypted)
+   * @param radio_port: The
+   */
+  typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
+  void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
 
   void start_receiving();
-
  private:
   void announce_session_key_if_needed();
   void send_session_key();;
@@ -56,7 +59,7 @@ class TxRxInstance {
   void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
   void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
 
-  void on_valid_packet(int wlan_index,uint8_t radio_port,std::shared_ptr<std::vector<uint8_t>> data);
+  void on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len);
  private:
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
@@ -87,6 +90,7 @@ class TxRxInstance {
   static constexpr auto RADIO_PORT_SESSION_KEY_PACKETS=25;
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
+  OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H
