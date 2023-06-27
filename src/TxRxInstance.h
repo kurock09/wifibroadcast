@@ -39,15 +39,19 @@ class TxRxInstance {
    */
   void tx_inject_packet(uint8_t radioPort,const uint8_t* data,int data_len);
 
-  // register a callback that is called every time a valid packet (for the given radio port) is received
   /**
    * Callback that is called every time a valid packet has been received
    * (valid = has been validated and decrypted)
-   * @param radio_port: The
+   * @param nonce: the nonce of the received packet (can be used for sequence numbering)
+   * @param wlan_index: the card on which the packet was received (in case there are multiple cards used for wb)
+   * @param radio_port: the multiplex index used to seperate streams during injection
    */
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
   void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
 
+  /**
+   * Receiving packets happens in the background in another thread.
+   */
   void start_receiving();
  private:
   void announce_session_key_if_needed();
