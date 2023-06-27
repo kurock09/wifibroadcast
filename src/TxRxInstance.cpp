@@ -153,8 +153,33 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   const uint8_t *pkt_payload = parsedPacket->payload;
   const size_t pkt_payload_size = parsedPacket->payloadSize;
 
-  if(!parsedPacket->ieee80211Header->isDataFrame()){
-    return ;
+  if (parsedPacket == std::nullopt) {
+    if(advanced_debugging){
+      m_console->warn("Discarding packet due to pcap parsing error!");
+    }
+    return;
+  }
+  if (parsedPacket->frameFailedFCSCheck) {
+    if(advanced_debugging){
+      m_console->warn("Discarding packet due to bad FCS!");
+    }
+    return;
+  }
+  if (!parsedPacket->ieee80211Header->isDataFrame()) {
+    if(advanced_debugging){
+      // we only process data frames
+      m_console->warn("Got packet that is not a data packet {}",(int) parsedPacket->ieee80211Header->getFrameControl());
+    }
+    return;
+  }
+  // All these edge cases should NEVER happen if using a proper tx/rx setup and the wifi driver isn't complete crap
+  if (parsedPacket->payloadSize <= 0) {
+    m_console->warn("Discarding packet due to no actual payload !");
+    return;
+  }
+  if (parsedPacket->payloadSize > RAW_WIFI_FRAME_MAX_PAYLOAD_SIZE) {
+    m_console->warn("Discarding packet due to payload exceeding max {}",(int) parsedPacket->payloadSize);
+    return;
   }
   const auto radio_port=parsedPacket->ieee80211Header->getRadioPort();
   m_console->debug("Got packet raio port {}",radio_port);
@@ -168,6 +193,14 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       m_console->debug("Initializing new session.");
     }
   }else{
+    // the payload needs to include at least the nonce, the encryption prefix and 1 byte of actual payload
+    static constexpr auto MIN_PACKET_PAYLOAD_SIZE=sizeof(uint64_t)+crypto_aead_chacha20poly1305_ABYTES+1;
+    if(pkt_payload_size<MIN_PACKET_PAYLOAD_SIZE){
+      if(advanced_debugging){
+        m_console->debug("Got packet with payload of {} (min:{})",pkt_payload_size,MIN_PACKET_PAYLOAD_SIZE);
+      }
+      return ;
+    }
     process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
   }
 }

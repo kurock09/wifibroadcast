@@ -70,6 +70,7 @@ class TxRxInstance {
   std::chrono::steady_clock::time_point m_session_key_announce_ts{};
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
+  const bool advanced_debugging= false;
   uint16_t m_ieee80211_seq = 0;
   //uint64_t m_nonce=0;
   uint16_t m_nonce=0;
