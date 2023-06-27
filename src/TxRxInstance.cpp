@@ -81,6 +81,11 @@ void TxRxInstance::rx_register_callback(TxRxInstance::OUTPUT_DATA_CALLBACK cb) {
   m_output_cb=std::move(cb);
 }
 
+void TxRxInstance::set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx) {
+  m_advanced_debugging_tx = enable_debug_tx;
+  m_advanced_debugging_rx =enable_debug_rx;
+}
+
 void TxRxInstance::loop_receive_packets() {
   while (true){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
@@ -155,19 +160,19 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   const size_t pkt_payload_size = parsedPacket->payloadSize;
 
   if (parsedPacket == std::nullopt) {
-    if(m_advanced_debugging){
+    if(m_advanced_debugging_rx){
       m_console->warn("Discarding packet due to pcap parsing error!");
     }
     return;
   }
   if (parsedPacket->frameFailedFCSCheck) {
-    if(m_advanced_debugging){
+    if(m_advanced_debugging_rx){
       m_console->debug("Discarding packet due to bad FCS!");
     }
     return;
   }
   if (!parsedPacket->ieee80211Header->isDataFrame()) {
-    if(m_advanced_debugging){
+    if(m_advanced_debugging_rx){
       // we only process data frames
       m_console->debug("Got packet that is not a data packet {}",(int) parsedPacket->ieee80211Header->getFrameControl());
     }
@@ -186,7 +191,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   m_console->debug("Got packet raio port {}",radio_port);
   if(radio_port==RADIO_PORT_SESSION_KEY_PACKETS){
     if (pkt_payload_size != WBSessionKeyPacket::SIZE_BYTES) {
-      if(m_advanced_debugging){
+      if(m_advanced_debugging_rx){
         m_console->warn("Cannot be session key packet - size mismatch {}",pkt_payload_size);
       }
       return;
@@ -199,7 +204,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     // the payload needs to include at least the nonce, the encryption prefix and 1 byte of actual payload
     static constexpr auto MIN_PACKET_PAYLOAD_SIZE=sizeof(uint64_t)+crypto_aead_chacha20poly1305_ABYTES+1;
     if(pkt_payload_size<MIN_PACKET_PAYLOAD_SIZE){
-      if(m_advanced_debugging){
+      if(m_advanced_debugging_rx){
         m_console->debug("Got packet with payload of {} (min:{})",pkt_payload_size,MIN_PACKET_PAYLOAD_SIZE);
       }
       return ;
@@ -268,7 +273,4 @@ void TxRxInstance::send_session_key() {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
     wifibroadcast::log::get_default()->warn("pcap -unable to inject session key packet size:{} ret:{} err:{}",session_key_packet.size(),len_injected, pcap_geterr(tx));
   }
-}
-void TxRxInstance::set_extended_debugging(bool enable) {
-  m_advanced_debugging=enable;
 }

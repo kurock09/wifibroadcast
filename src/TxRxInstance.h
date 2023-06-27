@@ -57,7 +57,7 @@ class TxRxInstance {
   /**
    * Really verbose logs (warning: Spams console)
    */
-   void set_extended_debugging(bool enable);
+   void set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx);
  private:
   void announce_session_key_if_needed();
   void send_session_key();;
@@ -75,7 +75,8 @@ class TxRxInstance {
   std::chrono::steady_clock::time_point m_session_key_announce_ts{};
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
-  bool m_advanced_debugging= false;
+  bool m_advanced_debugging_rx = false;
+  bool m_advanced_debugging_tx = false;
   uint16_t m_ieee80211_seq = 0;
   //uint64_t m_nonce=0;
   uint16_t m_nonce=0;
