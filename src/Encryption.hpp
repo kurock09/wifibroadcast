@@ -81,7 +81,7 @@ class Encryptor {
     assert(encryptedData.size() == ciphertext_len);
     return encryptedData;
   }
-  int encrypt2(const uint64_t& nonce,
+  int encrypt2(const uint64_t nonce,
                 const uint8_t *src,
                 std::size_t src_len,
                 uint8_t* dest){
@@ -90,7 +90,7 @@ class Encryptor {
                                         src, src_len,
                                          (uint8_t *)nullptr, 0,
                                          nullptr,
-                                         (uint8_t *) nonce, session_key.data());
+                                         (uint8_t *) &nonce, session_key.data());
     return (int)ciphertext_len;
   }
  private:

@@ -30,6 +30,9 @@ target_link_libraries(socket_helper_test ${WB_TARGET_LINK_LIBRARIES})
 add_executable(udp_packet_drop_util executables/udp_packet_drop_util.cpp)
 target_link_libraries(udp_packet_drop_util ${WB_TARGET_LINK_LIBRARIES})
 
+add_executable(test_txrx executables/test_txrx.cpp)
+target_link_libraries(test_txrx ${WB_TARGET_LINK_LIBRARIES})
+
 # When it is a static library, we don't need to install it.
 # But if it is a shared library, we need to install it.
 #install(TARGETS wifibroadcast DESTINATION lib)

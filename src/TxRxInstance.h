@@ -43,7 +43,12 @@ class TxRxInstance {
 
   }
 
+  void start_receiving();
+
  private:
+  void announce_session_key_if_needed();
+  void send_session_key();;
+
   void loop_receive_packets();
   int loop_iter(int rx_index);
 
@@ -54,8 +59,9 @@ class TxRxInstance {
  private:
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
+  std::chrono::steady_clock::time_point m_session_key_announce_ts{};
   RadiotapHeader m_radiotap_header;
-  Ieee80211Header mIeee80211Header;
+  Ieee80211Header mIeee80211Header{};
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
   int m_highest_rssi_index=0;

@@ -14,12 +14,23 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
 {
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
   assert(!m_wifi_cards.empty());
-  for(const auto& card: m_wifi_cards){
-    m_pcap_handles.push_back(PcapTxRx{});
+  mReceiverFDs.resize(m_wifi_cards.size());
+  for(int i=0;i<m_wifi_cards.size();i++){
+    auto wifi_card=m_wifi_cards[i];
+    PcapTxRx pcapTxRx{};
+    pcapTxRx.tx=RawReceiverHelper::helper_open_pcap_rx(wifi_card);
+    pcapTxRx.rx=RawTransmitterHelper::openTxWithPcap(wifi_card);
+    m_pcap_handles.push_back(pcapTxRx);
+    auto fd = pcap_get_selectable_fd(pcapTxRx.rx);
+    mReceiverFDs[i].fd = fd;
+    mReceiverFDs[i].events = POLLIN;
   }
   m_encryptor=std::make_unique<Encryptor>(std::nullopt);
+  m_decryptor=std::make_unique<Decryptor>(std::nullopt);
   m_encryptor->makeNewSessionKey(m_tx_sess_key_packet.sessionKeyNonce,
                                 m_tx_sess_key_packet.sessionKeyData);
+  // next session key in delta ms if packets are being fed
+  m_session_key_announce_ts = std::chrono::steady_clock::now()+SESSION_KEY_ANNOUNCE_DELTA;
 }
 
 void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
@@ -41,17 +52,14 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
   // radiotap header comes first
   memcpy(packet_buff, m_radiotap_header.getData(), RadiotapHeader::SIZE_BYTES);
   // Iee80211 header comes next
+  mIeee80211Header.writeParams(radioPort,0);
   memcpy(packet_buff+RadiotapHeader::SIZE_BYTES,mIeee80211Header.getData(),Ieee80211Header::SIZE_BYTES);
-  // encrypt and copy over the packet
-  uint8_t* encrypted_data_dest=packet_buff+RadiotapHeader::SIZE_BYTES+Ieee80211Header::SIZE_BYTES+sizeof(uint64_t);
-  const auto ciphertext_len=m_encryptor->encrypt2(m_nonce,data,data_len,encrypted_data_dest);
-  /*long long unsigned int ciphertext_len;
-  crypto_aead_chacha20poly1305_encrypt(encrypted_data_dest, &ciphertext_len,
-                                       data, data_len,
-                                       (uint8_t *)nullptr, 0,
-                                       nullptr,
-                                       (uint8_t *) m_nonce, session_key.data());*/
-
+  // create a new nonce
+  uint64_t nonce=++m_nonce;
+  // copy over the nonce and fill with the rest of the packet with the encrypted data
+  memcpy(packet_buff+RadiotapHeader::SIZE_BYTES+Ieee80211Header::SIZE_BYTES,(uint8_t*)&nonce,sizeof(uint64_t));
+  uint8_t* encrypted_data_p=packet_buff+RadiotapHeader::SIZE_BYTES+Ieee80211Header::SIZE_BYTES+sizeof(uint64_t);
+  const auto ciphertext_len=m_encryptor->encrypt2(m_nonce,data,data_len,encrypted_data_p);
   // we allocate the right size in the beginning, but check if ciphertext_len is actually matching what we calculated
   // (the documentation says 'write up to n bytes' but they probably mean (write exactly n bytes unless an error occurs)
   assert(data_len+crypto_aead_chacha20poly1305_ABYTES == ciphertext_len);
@@ -63,6 +71,7 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
     wifibroadcast::log::get_default()->warn("pcap -unable to inject packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
   }
+  announce_session_key_if_needed();
 }
 
 void TxRxInstance::loop_receive_packets() {
@@ -77,10 +86,12 @@ void TxRxInstance::loop_receive_packets() {
 
     if (rc == 0) {
       // timeout expired
+      m_console->debug("Timeout");
       continue;
     }
     // TODO Optimization: If rc>1 we have data on more than one wifi card. It would be better to alternating process a couple of packets from card 1, then card 2 or similar
     for (int i = 0; rc > 0 && i < mReceiverFDs.size(); i++) {
+      //m_console->debug("Got data on {}",i);
       if (mReceiverFDs[i].revents & (POLLERR | POLLNVAL)) {
         if(keep_running){
           // we should only get errors here if the card is disconnected
@@ -140,6 +151,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     return ;
   }
   const auto radio_port=parsedPacket->ieee80211Header->getRadioPort();
+  m_console->debug("Got packet raio port {}",radio_port);
   if(radio_port==RADIO_PORT_SESSION_KEY_PACKETS){
     if (pkt_payload_size != WBSessionKeyPacket::SIZE_BYTES) {
       m_console->warn("invalid session key packet - size mismatch");
@@ -174,5 +186,33 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
 }
 
 void TxRxInstance::on_valid_packet(int wlan_index, uint8_t radio_port,std::shared_ptr<std::vector<uint8_t>> data) {
+  m_console->debug("Got valid packet {} {}",radio_port,data->size());
+}
 
+void TxRxInstance::start_receiving() {
+  m_receive_thread=std::make_unique<std::thread>([this](){
+    loop_receive_packets();
+  });
+}
+
+void TxRxInstance::announce_session_key_if_needed() {
+  const auto cur_ts = std::chrono::steady_clock::now();
+  if (cur_ts >= m_session_key_announce_ts) {
+    // Announce session key
+    send_session_key();
+    m_session_key_announce_ts = cur_ts + SESSION_KEY_ANNOUNCE_DELTA;
+  }
+}
+
+void TxRxInstance::send_session_key() {
+  AbstractWBPacket tmp{(uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES};
+  Ieee80211Header tmp_hdr=mIeee80211Header;
+  tmp_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
+  auto session_key_packet=RawTransmitterHelper::createRadiotapPacket(m_radiotap_header,tmp_hdr,tmp);
+  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
+  const auto len_injected=pcap_inject(tx, session_key_packet.data(),session_key_packet.size());
+  if (len_injected != (int) session_key_packet.size()) {
+    // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
+    wifibroadcast::log::get_default()->warn("pcap -unable to inject session key packet size:{} ret:{} err:{}",session_key_packet.size(),len_injected, pcap_geterr(tx));
+  }
 }
