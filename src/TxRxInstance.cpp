@@ -54,8 +54,9 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
   // radiotap header comes first
   memcpy(packet_buff, m_radiotap_header.getData(), RadiotapHeader::SIZE_BYTES);
   // Iee80211 header comes next
-  mIeee80211Header.writeParams(radioPort,0);
+  mIeee80211Header.writeParams(radioPort,m_ieee80211_seq);
   memcpy(packet_buff+RadiotapHeader::SIZE_BYTES,mIeee80211Header.getData(),Ieee80211Header::SIZE_BYTES);
+  m_ieee80211_seq++;
   // create a new nonce
   uint64_t nonce=++m_nonce;
   // copy over the nonce and fill with the rest of the packet with the encrypted data

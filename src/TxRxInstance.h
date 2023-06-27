@@ -80,7 +80,7 @@ class TxRxInstance {
   //uint64_t m_nonce=0;
   uint16_t m_nonce=0;
   int m_highest_rssi_index=0;
-  // Session key used for sending data
+  // Session key used for encrypting outgoing packets
   WBSessionKeyPacket m_tx_sess_key_packet;
  private:
   std::unique_ptr<Encryptor> m_encryptor;
