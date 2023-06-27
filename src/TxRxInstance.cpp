@@ -87,7 +87,7 @@ void TxRxInstance::set_extended_debugging(bool enable_debug_tx,bool enable_debug
 }
 
 void TxRxInstance::loop_receive_packets() {
-  while (true){
+  while (keep_receiving){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
     int rc = poll(mReceiverFDs.data(), mReceiverFDs.size(), timeoutMS);
 
@@ -105,7 +105,7 @@ void TxRxInstance::loop_receive_packets() {
     for (int i = 0; rc > 0 && i < mReceiverFDs.size(); i++) {
       //m_console->debug("Got data on {}",i);
       if (mReceiverFDs[i].revents & (POLLERR | POLLNVAL)) {
-        if(keep_running){
+        if(keep_receiving){
           // we should only get errors here if the card is disconnected
           m_n_receiver_errors++;
           // limit logging here
@@ -248,9 +248,20 @@ void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t r
 }
 
 void TxRxInstance::start_receiving() {
+  keep_receiving= true;
   m_receive_thread=std::make_unique<std::thread>([this](){
     loop_receive_packets();
   });
+}
+
+void TxRxInstance::stop_receiving() {
+  keep_receiving= false;
+  if(m_receive_thread!= nullptr){
+    if(m_receive_thread->joinable()){
+      m_receive_thread->join();
+    }
+    m_receive_thread= nullptr;
+  }
 }
 
 void TxRxInstance::announce_session_key_if_needed() {

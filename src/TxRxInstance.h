@@ -53,6 +53,7 @@ class TxRxInstance {
    * Receiving packets happens in the background in another thread.
    */
   void start_receiving();
+  void stop_receiving();
 
   /**
    * Really verbose logs (warning: Spams console)
@@ -78,22 +79,19 @@ class TxRxInstance {
   bool m_advanced_debugging_rx = false;
   bool m_advanced_debugging_tx = false;
   uint16_t m_ieee80211_seq = 0;
-  //uint64_t m_nonce=0;
-  uint16_t m_nonce=0;
+  uint64_t m_nonce=0;
   int m_highest_rssi_index=0;
   // Session key used for encrypting outgoing packets
   WBSessionKeyPacket m_tx_sess_key_packet;
- private:
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
- private:
   struct PcapTxRx{
     pcap_t *tx= nullptr;
     pcap_t *rx= nullptr;
   };
   std::vector<PcapTxRx> m_pcap_handles;
  private:
-  bool keep_running= true;
+  bool keep_receiving= true;
   int m_n_receiver_errors=0;
   std::unique_ptr<std::thread> m_receive_thread;
   std::vector<pollfd> mReceiverFDs;
