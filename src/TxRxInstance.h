@@ -95,6 +95,15 @@ class TxRxInstance {
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
+ private:
+  // Receiving packet statistics
+  struct RxPacketStatsPerCard{
+    // total number of received packets (can come from non-wb, too)
+    uint64_t count_received_packets=0;
+    // total number of successfully validated & decrypted packets
+    uint64_t count_valid_packets=0;
+  };
+  std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H

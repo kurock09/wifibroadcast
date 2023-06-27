@@ -15,6 +15,7 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
   assert(!m_wifi_cards.empty());
   mReceiverFDs.resize(m_wifi_cards.size());
+  m_rx_packet_stats.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};
@@ -147,7 +148,7 @@ int TxRxInstance::loop_iter(int rx_index) {
 
 void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
-
+  m_rx_packet_stats[wlan_idx].count_received_packets++;
   const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, true);
   const uint8_t *pkt_payload = parsedPacket->payload;
   const size_t pkt_payload_size = parsedPacket->payloadSize;
@@ -186,6 +187,7 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
+    m_rx_packet_stats[wlan_idx].count_valid_packets++;
     if(wlan_idx==0){
       uint16_t tmp=nonce;
       m_seq_nr_helper.on_new_sequence_number(tmp);
