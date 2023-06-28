@@ -115,6 +115,7 @@ class FECEncoder {
       if(outputDataCallback){
         outputDataCallback(buffer_p,writtenDataSize);
       }
+      // NOTE: FECPayloadHdr::data_size needs to be included during the fec encode step
       primary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
     }
     // then we create as many FEC packets as needed
@@ -180,22 +181,23 @@ class RxBlock {
   }
   // returns true if we are "done with this block" aka all data has been already forwarded
   bool allPrimaryFragmentsHaveBeenForwarded() const {
-    if (blu_n_primary_fragments == -1)return false;
-    return nAlreadyForwardedPrimaryFragments == blu_n_primary_fragments;
+    if (m_n_primary_fragments_in_block == -1)return false;
+    return nAlreadyForwardedPrimaryFragments == m_n_primary_fragments_in_block;
   }
   // returns true if enough FEC secondary fragments are available to replace all missing primary fragments
   bool allPrimaryFragmentsCanBeRecovered() const {
     // return false if k is not known for this block yet (which means we didn't get a secondary fragment yet,
     // since each secondary fragment contains k)
-    if (blu_n_primary_fragments == -1)return false;
+    if (m_n_primary_fragments_in_block == -1)return false;
     // ready for FEC step if we have as many secondary fragments as we are missing on primary fragments
-    if (n_available_primary_fragments+n_available_secondary_fragments >= blu_n_primary_fragments)return true;
+    if (m_n_available_primary_fragments + m_n_available_secondary_fragments >=
+        m_n_primary_fragments_in_block)return true;
     return false;
   }
   // returns true if suddenly all primary fragments have become available
   bool allPrimaryFragmentsAreAvailable() const {
-    if (blu_n_primary_fragments == -1)return false;
-    return n_available_primary_fragments == blu_n_primary_fragments;
+    if (m_n_primary_fragments_in_block == -1)return false;
+    return m_n_available_primary_fragments == m_n_primary_fragments_in_block;
   }
   // copy the fragment data and mark it as available
   // you should check if it is already available with hasFragment() to avoid storing a fragment multiple times
@@ -212,27 +214,31 @@ class RxBlock {
     fragment_map[header.fragment_idx] = FragmentStatus::AVAILABLE;
 
     // each fragment inside a block should report the same n of primary fragments
-    if(blu_n_primary_fragments==-1){
-      blu_n_primary_fragments=header.n_primary_fragments;
+    if(m_n_primary_fragments_in_block ==-1){
+      m_n_primary_fragments_in_block =header.n_primary_fragments;
     }else{
-      assert(blu_n_primary_fragments==header.n_primary_fragments);
+      assert(m_n_primary_fragments_in_block ==header.n_primary_fragments);
     }
     const bool is_primary_fragment=header.fragment_idx<header.n_primary_fragments;
     if(is_primary_fragment){
-      n_available_primary_fragments++;
+      m_n_available_primary_fragments++;
     }else{
-      n_available_secondary_fragments++;
+      m_n_available_secondary_fragments++;
       const auto payload_len_including_size=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
       // all secondary fragments shall have the same size
-      if(blu_size_of_secondary_fragments==-1){
-        blu_size_of_secondary_fragments=payload_len_including_size;
+      if(m_size_of_secondary_fragments ==-1){
+        m_size_of_secondary_fragments =payload_len_including_size;
       }else{
-        assert(blu_size_of_secondary_fragments==payload_len_including_size);
+        assert(m_size_of_secondary_fragments ==payload_len_including_size);
       }
+    }
+    if(firstFragmentTimePoint==std::nullopt){
+      firstFragmentTimePoint=std::chrono::steady_clock::now();
     }
   }
   void fragment_copy_payload(const int fragment_idx,const uint8_t *data, const std::size_t dataLen){
     uint8_t* buff=blockBuffer[fragment_idx].data();
+    // NOTE: FECPayloadHdr::data_size needs to be included during the fec decode step
     const uint8_t* payload_p=data+sizeof(FECPayloadHdr)-sizeof(uint16_t);
     auto payload_s=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
     // write the data (doesn't matter if FEC data or correction packet)
@@ -249,7 +255,7 @@ class RxBlock {
   std::vector<uint16_t> pullAvailablePrimaryFragments(const bool discardMissingPackets = false) {
     // note: when pulling the available fragments, we do not need to know how many primary fragments this block actually contains
     std::vector<uint16_t> ret;
-    for (int i = nAlreadyForwardedPrimaryFragments; i < n_available_primary_fragments; i++) {
+    for (int i = nAlreadyForwardedPrimaryFragments; i < m_n_available_primary_fragments; i++) {
       if (fragment_map[i] == FragmentStatus::UNAVAILABLE) {
         if (discardMissingPackets) {
           continue;
@@ -265,22 +271,22 @@ class RxBlock {
   }
   const uint8_t *get_primary_fragment_data_p(const int fragment_index){
     assert(fragment_map[fragment_index] == AVAILABLE);
-    assert(blu_n_primary_fragments!=-1);
-    assert(fragment_index<blu_n_primary_fragments);
+    assert(m_n_primary_fragments_in_block !=-1);
+    assert(fragment_index< m_n_primary_fragments_in_block);
     //return blockBuffer[fragment_index].data()+sizeof(FECPayloadHdr);
     return blockBuffer[fragment_index].data()+sizeof(uint16_t);
   }
   const int get_primary_fragment_data_size(const int fragment_index){
     assert(fragment_map[fragment_index] == AVAILABLE);
-    assert(blu_n_primary_fragments!=-1);
-    assert(fragment_index<blu_n_primary_fragments);
+    assert(m_n_primary_fragments_in_block !=-1);
+    assert(fragment_index< m_n_primary_fragments_in_block);
     uint16_t* len_p=(uint16_t*)blockBuffer[fragment_index].data();
     return *len_p;
   }
 
   // returns the n of primary and secondary fragments for this block
   int getNAvailableFragments() const {
-    return n_available_primary_fragments + n_available_secondary_fragments;
+    return m_n_available_primary_fragments + m_n_available_secondary_fragments;
   }
   // make sure to check if enough secondary fragments are available before calling this method !
   // reconstructing only part of the missing data is not supported !
@@ -288,17 +294,18 @@ class RxBlock {
   int reconstructAllMissingData() {
     //wifibroadcast::log::get_default()->debug("reconstructAllMissingData"<<nAvailablePrimaryFragments<<" "<<nAvailableSecondaryFragments<<" "<<fec.FEC_K<<"\n";
     // NOTE: FEC does only work if nPrimaryFragments+nSecondaryFragments>=FEC_K
-    assert(blu_n_primary_fragments != -1);
-    assert(blu_size_of_secondary_fragments != -1);
+    assert(m_n_primary_fragments_in_block != -1);
+    assert(m_size_of_secondary_fragments != -1);
     // do not reconstruct if reconstruction is impossible
-    assert(getNAvailableFragments() >= blu_n_primary_fragments);
+    assert(getNAvailableFragments() >= m_n_primary_fragments_in_block);
     // also do not reconstruct if reconstruction is not needed
-   // const int nMissingPrimaryFragments = blu_n_primary_fragments- n_available_primary_fragments;
-    auto recoveredFragmentIndices = fecDecode(blu_size_of_secondary_fragments, blockBuffer, blu_n_primary_fragments, fragment_map);
+   // const int nMissingPrimaryFragments = m_n_primary_fragments_in_block- m_n_available_primary_fragments;
+    auto recoveredFragmentIndices = fecDecode(m_size_of_secondary_fragments, blockBuffer,
+                  m_n_primary_fragments_in_block, fragment_map);
     for (const auto idx: recoveredFragmentIndices) {
       fragment_map[idx] = AVAILABLE;
     }
-    n_available_primary_fragments += recoveredFragmentIndices.size();
+    m_n_available_primary_fragments += recoveredFragmentIndices.size();
     // n of reconstructed packets
     return recoveredFragmentIndices.size();
   }
@@ -333,11 +340,11 @@ class RxBlock {
   std::optional<std::chrono::steady_clock::time_point> firstFragmentTimePoint = std::nullopt;
   // as soon as we know any of the fragments for this block, we know how many primary fragments this block contains
   // (and therefore, how many primary or secondary fragments we need to fully reconstruct)
-  int blu_n_primary_fragments=-1;
+  int m_n_primary_fragments_in_block =-1;
   // for the fec step, we need the size of the fec secondary fragments, which should be equal for all secondary fragments
-  int blu_size_of_secondary_fragments=-1;
-  int n_available_primary_fragments=0;
-  int n_available_secondary_fragments=0;
+  int m_size_of_secondary_fragments =-1;
+  int m_n_available_primary_fragments =0;
+  int m_n_available_secondary_fragments =0;
 };
 
 // Takes a continuous stream of packets (data and fec correction packets) and
