@@ -156,10 +156,8 @@ class RxBlock {
   // you could just use MAX_TOTAL_FRAGMENTS_PER_BLOCK for that, but if your tx then uses (4:8) for example, you'd
   // allocate much more memory every time for a new RX block than needed.
   explicit RxBlock(const unsigned int maxNFragmentsPerBlock, const uint64_t blockIdx1)
-      :
-        blockIdx(blockIdx1),
-        fragment_map(maxNFragmentsPerBlock,
-                     FragmentStatus::UNAVAILABLE), //after creation of the RxBlock every f. is marked as unavailable
+      :blockIdx(blockIdx1),
+        fragment_map(maxNFragmentsPerBlock,FragmentStatus::UNAVAILABLE), //after creation of the RxBlock every f. is marked as unavailable
         blockBuffer(maxNFragmentsPerBlock) {
     assert(fragment_map.size() == blockBuffer.size());
   }
