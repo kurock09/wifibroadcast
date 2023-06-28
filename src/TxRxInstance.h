@@ -28,6 +28,7 @@
 class TxRxInstance {
  public:
   explicit TxRxInstance(std::vector<std::string> wifi_cards);
+  ~TxRxInstance();
   /**
    * Creates a valid injection packet which has the layout:
    * radiotap_header,ieee_80211_header,nonce (64 bit), encrypted data, encryption prefix

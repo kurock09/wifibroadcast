@@ -323,3 +323,14 @@ void TxRxInstance::threadsafe_update_radiotap_header(
   auto newRadioTapHeader=RadiotapHeader{params};
   m_radiotap_header =newRadioTapHeader;
 }
+
+TxRxInstance::~TxRxInstance() {
+  stop_receiving();
+  for(auto& fd:mReceiverFDs){
+    close(fd.fd);
+  }
+  for(auto& pcapTxRx:m_pcap_handles){
+    pcap_close(pcapTxRx.rx);
+    pcap_close(pcapTxRx.tx);
+  }
+}
