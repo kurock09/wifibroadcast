@@ -96,7 +96,7 @@ class FECEncoder {
     std::vector<const uint8_t *> primary_fragments_data_p;
     for(int i=0;i<data_packets.size();i++){
       const auto& data_fragment=data_packets[i];
-      wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
+      //wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
       assert(data_fragment->size()>0);
       assert(data_fragment->size()<=FEC_MAX_PAYLOAD_SIZE);
       header.fragment_idx=i;
@@ -133,7 +133,7 @@ class FECEncoder {
       // copy over the header
       memcpy(buffer_p,(uint8_t*)&header,sizeof(FECPayloadHdr));
       // where the FEC packet correction data is written to
-      secondary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr));
+      secondary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
     }
     fec_encode2(max_packet_size+sizeof(uint16_t),primary_fragments_data_p,secondary_fragments_data_p);
     // and forward all the FEC correction packets
