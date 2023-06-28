@@ -121,6 +121,13 @@ static void assertVectorsEqual(const std::vector<uint8_t> &sb, const std::vector
   const int result = memcmp(sb.data(), rb.data(), sb.size());
   assert(result == 0);
 }
+static void assertVectorsOfVectorsEqual(const std::vector<std::vector<uint8_t>> &sbl, const std::vector<std::vector<uint8_t>> &rbl){
+  for(int i=0;i<sbl.size();i++){
+    const auto& sb=sbl[i];
+    const auto& rb=rbl[i];
+    assertVectorsEqual(sb,rb);
+  }
+}
 template<std::size_t S>
 static void assertArraysEqual(const std::array<uint8_t, S> &sb, const std::array<uint8_t, S> &rb) {
   const int result = memcmp(sb.data(), rb.data(), sb.size());

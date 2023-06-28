@@ -69,9 +69,11 @@ static void testWithoutPacketLoss(const int k, const int percentage, const std::
 	const auto &in = testIn[i];
 	encoder.encodePacket(in.data(), in.size());
 	const auto &out = testOut[i];
-	assert(GenericHelper::compareVectors(in, out) == true);
+        GenericHelper::assertVectorsEqual(in,out);
   }
+  GenericHelper::assertVectorsOfVectorsEqual(testIn,testOut);
 }
+
 // test without packet loss, dynamic block size aka
 // randomly end the block at some time
 static void testWithoutPacketLossDynamicBlockSize() {
