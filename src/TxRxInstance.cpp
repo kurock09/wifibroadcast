@@ -14,7 +14,7 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
 {
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
   assert(!m_wifi_cards.empty());
-  mReceiverFDs.resize(m_wifi_cards.size());
+  m_receive_pollfds.resize(m_wifi_cards.size());
   m_rx_packet_stats.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
@@ -24,8 +24,8 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
     //pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
     m_pcap_handles.push_back(pcapTxRx);
     auto fd = pcap_get_selectable_fd(pcapTxRx.rx);
-    mReceiverFDs[i].fd = fd;
-    mReceiverFDs[i].events = POLLIN;
+    m_receive_pollfds[i].fd = fd;
+    m_receive_pollfds[i].events = POLLIN;
   }
   m_encryptor=std::make_unique<Encryptor>(std::nullopt);
   m_decryptor=std::make_unique<Decryptor>(std::nullopt);
@@ -89,7 +89,7 @@ void TxRxInstance::set_extended_debugging(bool enable_debug_tx,bool enable_debug
 void TxRxInstance::loop_receive_packets() {
   while (keep_receiving){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
-    int rc = poll(mReceiverFDs.data(), mReceiverFDs.size(), timeoutMS);
+    int rc = poll(m_receive_pollfds.data(), m_receive_pollfds.size(), timeoutMS);
 
     if (rc < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
@@ -102,9 +102,9 @@ void TxRxInstance::loop_receive_packets() {
       continue;
     }
     // TODO Optimization: If rc>1 we have data on more than one wifi card. It would be better to alternating process a couple of packets from card 1, then card 2 or similar
-    for (int i = 0; rc > 0 && i < mReceiverFDs.size(); i++) {
+    for (int i = 0; rc > 0 && i < m_receive_pollfds.size(); i++) {
       //m_console->debug("Got data on {}",i);
-      if (mReceiverFDs[i].revents & (POLLERR | POLLNVAL)) {
+      if (m_receive_pollfds[i].revents & (POLLERR | POLLNVAL)) {
         if(keep_receiving){
           // we should only get errors here if the card is disconnected
           m_n_receiver_errors++;
@@ -118,7 +118,7 @@ void TxRxInstance::loop_receive_packets() {
           return;
         }
       }
-      if (mReceiverFDs[i].revents & POLLIN) {
+      if (m_receive_pollfds[i].revents & POLLIN) {
         loop_iter(i);
         rc -= 1;
       }
@@ -326,7 +326,7 @@ void TxRxInstance::threadsafe_update_radiotap_header(
 
 TxRxInstance::~TxRxInstance() {
   stop_receiving();
-  for(auto& fd:mReceiverFDs){
+  for(auto& fd: m_receive_pollfds){
     close(fd.fd);
   }
   for(auto& pcapTxRx:m_pcap_handles){

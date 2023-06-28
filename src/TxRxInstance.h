@@ -108,7 +108,7 @@ class TxRxInstance {
   bool keep_receiving= true;
   int m_n_receiver_errors=0;
   std::unique_ptr<std::thread> m_receive_thread;
-  std::vector<pollfd> mReceiverFDs;
+  std::vector<pollfd> m_receive_pollfds;
   std::chrono::steady_clock::time_point m_last_receiver_error_log=std::chrono::steady_clock::now();
   static constexpr auto RADIO_PORT_SESSION_KEY_PACKETS=25;
   // for calculating the packet loss on the rx side
