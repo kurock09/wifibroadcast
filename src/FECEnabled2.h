@@ -40,11 +40,15 @@ struct FECPayloadHdr{
   // and do this when encoding / decoding such that the 0 bytes don't have to be transmitted.
   uint16_t data_size;
 }__attribute__ ((packed));
+static_assert(sizeof(FECPayloadHdr)==8);
 
 // 1510-(13+24+9+16+2)
 //A: Any UDP with packet size <= 1466. For example x264 inside RTP or Mavlink.
 // set here to remove dependency on wifibroadcast.hpp
 static constexpr const auto FEC_MAX_PACKET_SIZE = 1448-2;
+//static constexpr const auto FEC_MAX_PACKET_SIZE= WB_FRAME_MAX_PAYLOAD;
+static constexpr const auto FEC_MAX_PAYLOAD_SIZE = FEC_MAX_PACKET_SIZE - sizeof(FECPayloadHdr);
+static_assert(FEC_MAX_PAYLOAD_SIZE == 1446-8);
 
 // max 255 primary and secondary fragments together for now. Theoretically, this implementation has enough bytes in the header for
 // up to 15 bit fragment indices, 2^15=32768
@@ -91,6 +95,8 @@ class FECEncoder {
     std::vector<const uint8_t *> primary_fragments_data_p;
     for(int i=0;i<data_packets.size();i++){
       auto data_fragment=data_packets[i];
+      assert(data_fragment->size()>0);
+      assert(data_fragment->size()<=FEC_MAX_PAYLOAD_SIZE);
       header.fragment_idx=i;
       header.data_size=data_fragment->size();
       auto buffer_p=m_block_buffer[i].data();
@@ -223,7 +229,6 @@ class RxBlock {
         assert(blu_size_of_secondary_fragments==dataLen);
       }
     }
-
   }
   /**
    * @returns the indices for all primary fragments that have not yet been forwarded and are available (already received or reconstructed).
@@ -234,7 +239,7 @@ class RxBlock {
   std::vector<uint16_t> pullAvailablePrimaryFragments(const bool discardMissingPackets = false) {
     // note: when pulling the available fragments, we do not need to know how many primary fragments this block actually contains
     std::vector<uint16_t> ret;
-    for (int i = nAlreadyForwardedPrimaryFragments; i < nAvailablePrimaryFragments; i++) {
+    for (int i = nAlreadyForwardedPrimaryFragments; i < n_available_primary_fragments; i++) {
       if (fragment_map[i] == FragmentStatus::UNAVAILABLE) {
         if (discardMissingPackets) {
           continue;
@@ -250,8 +255,22 @@ class RxBlock {
   }
   const uint8_t *getDataPrimaryFragment(const uint16_t primaryFragmentIdx) {
     assert(fragment_map[primaryFragmentIdx] == AVAILABLE);
-    return blockBuffer[primaryFragmentIdx].data();
+    return blockBuffer[primaryFragmentIdx].data()+sizeof(FECPayloadHdr)-sizeof(uint16_t);
   }
+  const uint8_t *get_primary_fragment_data_p(const int fragment_index){
+    assert(fragment_map[fragment_index] == AVAILABLE);
+    assert(blu_n_primary_fragments!=-1);
+    assert(fragment_index<blu_n_primary_fragments);
+    return blockBuffer[fragment_index].data()+sizeof(FECPayloadHdr);
+  }
+  const int get_primary_fragment_data_size(const int fragment_index){
+    assert(fragment_map[fragment_index] == AVAILABLE);
+    assert(blu_n_primary_fragments!=-1);
+    assert(fragment_index<blu_n_primary_fragments);
+    FECPayloadHdr* hdr=(FECPayloadHdr*)blockBuffer[fragment_index].data();
+    return hdr->data_size;
+  }
+
   // returns the n of primary and secondary fragments for this block
   int getNAvailableFragments() const {
     return n_available_primary_fragments + n_available_secondary_fragments;
@@ -263,15 +282,16 @@ class RxBlock {
     //wifibroadcast::log::get_default()->debug("reconstructAllMissingData"<<nAvailablePrimaryFragments<<" "<<nAvailableSecondaryFragments<<" "<<fec.FEC_K<<"\n";
     // NOTE: FEC does only work if nPrimaryFragments+nSecondaryFragments>=FEC_K
     assert(blu_n_primary_fragments != -1);
+    assert(blu_size_of_secondary_fragments != -1);
     // do not reconstruct if reconstruction is impossible
     assert(getNAvailableFragments() >= blu_n_primary_fragments);
     // also do not reconstruct if reconstruction is not needed
     const int nMissingPrimaryFragments = blu_n_primary_fragments- n_available_primary_fragments;
-    auto recoveredFragmentIndices = fecDecode(sizeOfSecondaryFragments, blockBuffer, fec_k, fragment_map);
+    auto recoveredFragmentIndices = fecDecode(blu_size_of_secondary_fragments, blockBuffer, blu_n_primary_fragments, fragment_map);
     for (const auto idx: recoveredFragmentIndices) {
       fragment_map[idx] = AVAILABLE;
     }
-    nAvailablePrimaryFragments += recoveredFragmentIndices.size();
+    n_available_primary_fragments += recoveredFragmentIndices.size();
     // n of reconstructed packets
     return recoveredFragmentIndices.size();
   }
@@ -283,14 +303,15 @@ class RxBlock {
   }
   // Returns the number of missing primary packets (e.g. the n of actual data packets that are missing)
   // This only works if we know the "fec_k" parameter
-  std::optional<int> get_missing_primary_packets(){
+  /*std::optional<int> get_missing_primary_packets(){
     if(fec_k<=0)return std::nullopt;
     return fec_k-nAvailablePrimaryFragments;
-  }
+  }*/
   std::string get_missing_primary_packets_readable(){
-    const auto tmp=get_missing_primary_packets();
+    /*const auto tmp=get_missing_primary_packets();
     if(tmp==std::nullopt)return "?";
-    return std::to_string(tmp.value());
+    return std::to_string(tmp.value());*/
+    return "TODO";
   }
  private:
   // the block idx marks which block this element refers to
@@ -342,18 +363,19 @@ class FECDecoder {
   AvgCalculator m_fec_decode_time{};
  public:
   bool validate_and_process_packet(const uint8_t* data,int data_len){
-    if(data_len<sizeof(FECPayloadHdr2)){
+    if(data_len<sizeof(FECPayloadHdr)){
       wifibroadcast::log::get_default()->warn("too small packet size:{}",data_len);
     }
     // reconstruct the data layout
-    const FECPayloadHdr2* header_p=(FECPayloadHdr2*)data;
-    const uint8_t* payload_p=data+sizeof(FECPayloadHdr2);
-    const int payload_size=data_len-sizeof(FECPayloadHdr2);
+    const FECPayloadHdr* header_p=(FECPayloadHdr*)data;
+   /* const uint8_t* payload_p=data+sizeof(FECPayloadHdr);
+    const int payload_size=data_len-sizeof(FECPayloadHdr);*/
     if (header_p->fragment_idx >= maxNFragmentsPerBlock) {
       wifibroadcast::log::get_default()->warn("invalid fragment_idx: {}",header_p->fragment_idx);
       return false;
     }
-    process_with_rx_queue(*header_p,payload_p,payload_size);
+    process_with_rx_queue(*header_p,data,data_len);
+    return true;
   }
  private:
   // since we also need to search this data structure, a std::queue is not enough.
@@ -378,17 +400,13 @@ class FECDecoder {
     }
     const auto indices = block.pullAvailablePrimaryFragments(discardMissingPackets);
     for (auto primaryFragmentIndex: indices) {
-      const uint8_t *primaryFragment = block.getDataPrimaryFragment(primaryFragmentIndex);
-      const FECPayloadHdr &packet_hdr = *(FECPayloadHdr *) primaryFragment;
-      // data pinter and actual size of payload
-      const uint8_t *payload = primaryFragment + sizeof(FECPayloadHdr);
-      const auto packet_size = packet_hdr.getPrimaryFragmentSize();
-      if (packet_size > FEC_MAX_PAYLOAD_SIZE || packet_size <= 0) {
-        // this should never happen !
-        wifibroadcast::log::get_default()->warn("corrupted packet on FECDecoder out ({}:{}) : {}B",block.getBlockIdx(),primaryFragmentIndex,packet_size);
+      const uint8_t* data=block.get_primary_fragment_data_p(primaryFragmentIndex);
+      const int data_size=block.get_primary_fragment_data_size(primaryFragmentIndex);
+      if (data_size > FEC_MAX_PAYLOAD_SIZE || data_size <= 0) {
+        wifibroadcast::log::get_default()->warn("corrupted packet on FECDecoder out ({}:{}) : {}B",block.getBlockIdx(),primaryFragmentIndex,data_size);
       } else {
-        mSendDecodedPayloadCallback(payload, packet_size);
-        stats.count_bytes_forwarded+=packet_size;
+        mSendDecodedPayloadCallback(data, data_size);
+        stats.count_bytes_forwarded+=data_size;
       }
     }
   }
@@ -473,7 +491,7 @@ class FECDecoder {
     assert(rx_queue.back()->getBlockIdx() == blockIdx);
     return rx_queue.back().get();
   }
-  void process_with_rx_queue(const FECPayloadHdr2& header,const uint8_t* data,int data_size){
+  void process_with_rx_queue(const FECPayloadHdr& header,const uint8_t* data,int data_size){
     auto blockP = rxRingFindCreateBlockByIdx(header.block_idx);
     //ignore already processed blocks
     if (blockP == nullptr) return;
@@ -536,34 +554,6 @@ class FECDecoder {
         }
         // remove block
         rxQueuePopFront();
-      }
-    }
-  }
- public:
-  void decreaseRxRingSize(int newSize) {
-    wifibroadcast::log::get_default()->debug("Decreasing ring size from {} to {}",rx_queue.size(),newSize);
-    while (rx_queue.size() > newSize) {
-      forwardMissingPrimaryFragmentsIfAvailable(*rx_queue.front(), true);
-      rxQueuePopFront();
-    }
-  }
-  // By doing so you are telling the pipeline:
-  // It makes no sense to hold on to any blocks. Future packets won't help you to recover any blocks that might still be in the pipeline
-  // For example, if the RX doesn't receive anything for N ms any data that is going to arrive will not have a smaller or equal block index than the blocks that are currently in the queue
-  void flushRxRing() {
-    decreaseRxRingSize(0);
-  }
-  //TODO maybe this would make sense
-  void removeBlocksOlderThan(const std::chrono::steady_clock::duration &maxDelta) {
-    // if there is any, find the "newest" block which age is bigger than delta
-    const auto now = std::chrono::steady_clock::now();
-    for (auto &block: rx_queue) {
-      const auto firstFragmentTimePoint = block->getFirstFragmentTimePoint();
-      if (firstFragmentTimePoint != std::nullopt) {
-        const auto delta = now - *firstFragmentTimePoint;
-        if (delta > maxDelta) {
-          //wifibroadcast::log::get_default()->debug("Got block"<<block->getBlockIdx()<<" with age"<<MyTimeHelper::R(delta)<<"\n";
-        }
       }
     }
   }

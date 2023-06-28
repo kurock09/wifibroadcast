@@ -79,16 +79,31 @@ static std::vector<uint8_t> createRandomDataBuffer(const ssize_t sizeBytes) {
 static std::shared_ptr<std::vector<uint8_t>> createRandomDataBuffer2(const ssize_t sizeBytes) {
   return std::make_shared<std::vector<uint8_t>>(createRandomDataBuffer(sizeBytes));
 }
-// Create a buffer filled with random data where size is chosen Randomly between [minSizeB,...,maxSizeB]
-static std::vector<uint8_t> createRandomDataBuffer(const ssize_t minSizeB, const ssize_t maxSizeB) {
-  // https://stackoverflow.com/questions/12657962/how-do-i-generate-a-random-number-between-two-variables-that-i-have-stored
+
+// Create a random number in range  [min,...,max]
+// https://stackoverflow.com/questions/12657962/how-do-i-generate-a-random-number-between-two-variables-that-i-have-stored
+static ssize_t create_random_number_between(const ssize_t minSizeB, const ssize_t maxSizeB){
   const auto sizeBytes = rand() % (maxSizeB - minSizeB + 1) + minSizeB;
   assert(sizeBytes <= maxSizeB);
   assert(sizeBytes >= minSizeB);
   if (minSizeB == maxSizeB) {
     assert(sizeBytes == minSizeB);
   }
-  return createRandomDataBuffer(sizeBytes);
+  return sizeBytes;
+}
+
+static std::vector<std::shared_ptr<std::vector<uint8_t>>> convert_vec_of_vec_to_shared(std::vector<std::vector<uint8_t>> in){
+  std::vector<std::shared_ptr<std::vector<uint8_t>>> ret;
+  for(auto data:in){
+    std::shared_ptr<std::vector<uint8_t>> shared=std::make_shared<std::vector<uint8_t>>(data.begin(),data.end());
+    ret.push_back(shared);
+  }
+  return ret;
+}
+
+// Create a buffer filled with random data where size is chosen Randomly between [minSizeB,...,maxSizeB]
+static std::vector<uint8_t> createRandomDataBuffer(const ssize_t minSizeB, const ssize_t maxSizeB) {
+  return createRandomDataBuffer(create_random_number_between(minSizeB,maxSizeB));
 }
 // create n random data buffers with size [minSizeB,...,maxSizeB]
 static std::vector<std::vector<uint8_t>> createRandomDataBuffers(const std::size_t nBuffers,

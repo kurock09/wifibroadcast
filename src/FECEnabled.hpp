@@ -145,6 +145,13 @@ class FECEncoder {
       assert(end_block==res);
     }
   }
+  void tmp_encode_block2(std::vector<std::vector<uint8_t>> fragments){
+    for(int i=0;i<fragments.size();i++){
+      const bool end_block=i==fragments.size()-1;
+      const auto res=encodePacket(fragments[i].data(),fragments[i].size(),end_block);
+      assert(end_block==res);
+    }
+  }
   /**
    * encode packet such that it can be decoded by FECDecoder. Data is forwarded via the callback.
    * @param endBlock if true, the FEC step is applied immediately
