@@ -40,9 +40,13 @@ using namespace bla;
 
 namespace TestFEC {
 
-
-static void x_testWithRandomBlockSizes(){
-  wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes begin");
+// Chooses randomly
+// 1) block size (n fragments in block)
+// 2) size of data in each fragment in a block
+// 3) a fec overhead value (k)
+// 4) a specific amount of dropped packets, but keeping enough packets to be fully recoverable
+static void test_random_bs_fs_overhead_dropped(){
+  wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped begin");
   std::vector<std::vector<std::vector<uint8_t>>> fragmented_frames_in;
   std::vector<std::vector<uint8_t>> fragmented_frames_sequential_in;
   for(int i=0;i<1000*2;i++){
@@ -55,7 +59,7 @@ static void x_testWithRandomBlockSizes(){
       fragmented_frame.push_back(buff);
       fragmented_frames_sequential_in.push_back(buff);
     }
-    //wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes with {} fragments",fragmented_frame.size());
+    //wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped with {} fragments",fragmented_frame.size());
     fragmented_frames_in.push_back(fragmented_frame);
   }
   bla::FECEncoder encoder{};
@@ -102,33 +106,7 @@ static void x_testWithRandomBlockSizes(){
     encoder.encode_block(GenericHelper::convert_vec_of_vec_to_shared(fragmented_frame),n_secondary_fragments);
   }
   GenericHelper::assertVectorsOfVectorsEqual(fragmented_frames_sequential_in,testOut);
-  wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes end");
-}
-
-// test without packet loss, fixed block size
-static void testWithoutPacketLoss(const int k, const int percentage, const std::vector<std::vector<uint8_t>> &testIn) {
-  /*std::cout << "Test without packet loss. K:" << k << " P:" << percentage << " N_PACKETS:" << testIn.size() << "\n";
-  FECEncoder encoder(k, percentage);
-  FECDecoder decoder{10};
-  std::vector<std::vector<uint8_t>> testOut;
-
-  const auto cb1 = [&decoder](const uint64_t nonce, const uint8_t *payload, const std::size_t payloadSize)mutable {
-	decoder.validateAndProcessPacket(nonce, std::vector<uint8_t>(payload, payload + payloadSize));
-  };
-  const auto cb2 = [&testOut](const uint8_t *payload, std::size_t payloadSize)mutable {
-	testOut.emplace_back(payload, payload + payloadSize);
-  };
-  encoder.outputDataCallback = cb1;
-  decoder.mSendDecodedPayloadCallback = cb2;
-  // If there is no data loss the packets should arrive immediately
-  for (std::size_t i = 0; i < testIn.size(); i++) {
-	//std::cout<<"Step\n";
-	const auto &in = testIn[i];
-	encoder.encodePacket(in.data(), in.size());
-	const auto &out = testOut[i];
-        GenericHelper::assertVectorsEqual(in,out);
-  }
-  GenericHelper::assertVectorsOfVectorsEqual(testIn,testOut);*/
+  wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped end");
 }
 
 // test without packet loss, dynamic block size aka
@@ -202,114 +180,6 @@ static void testRxQueue(const int k, const int percentage) {
   }*/
 }
 
-// No packet loss
-// Fixed packet size
-static void testWithoutPacketLossFixedPacketSize(const int k, const int percentage, const std::size_t N_PACKETS) {
-  auto testIn = GenericHelper::createRandomDataBuffers(N_PACKETS, FEC_MAX_PAYLOAD_SIZE, FEC_MAX_PAYLOAD_SIZE);
-  testWithoutPacketLoss(k, percentage, testIn);
-}
-
-// No packet loss
-// Dynamic packet size (up to N bytes)
-static void testWithoutPacketLossDynamicPacketSize(const int k, const int percentage, const std::size_t N_PACKETS) {
-  auto testIn = GenericHelper::createRandomDataBuffers(N_PACKETS, 1, FEC_MAX_PAYLOAD_SIZE);
-  testWithoutPacketLoss(k, percentage, testIn);
-}
-
-// test with packet loss
-// but only drop as much as everything must be still recoverable
-static void testWithPacketLossButEverythingIsRecoverable(const int k,
-														 const unsigned int percentage,
-														 const std::vector<std::vector<uint8_t>> &testIn,
-														 const int DROP_MODE,
-														 const bool SEND_DUPLICATES = false) {
-  /*assert(testIn.size() % k == 0);
-  const auto n = FECEncoder::calculateN(k, percentage);
-  // drop mode 2 is impossible if (n-k)<2
-  if (DROP_MODE == 2) {
-	//assert((k*percentage/100)>=2);
-	assert((n - k) >= 2);
-  }
-  std::cout << "Test (with packet loss) K:" << k << " P:" << percentage << " N_PACKETS:" << testIn.size()
-			<< " DROP_MODE:" << DROP_MODE << "\n";
-  FECEncoder encoder(k, percentage);
-  FECDecoder decoder{10};
-  std::vector<std::vector<uint8_t>> testOut;
-  const auto cb1 = [&decoder, k, DROP_MODE, SEND_DUPLICATES](const uint64_t nonce,
-															 const uint8_t *payload,
-															 const std::size_t payloadSize)mutable {
-	const FECNonce fecNonce = fecNonceFrom(nonce);
-	const auto blockIdx = fecNonce.blockIdx;
-	const auto fragmentIdx = fecNonce.fragmentIdx;
-	if (DROP_MODE == 0) {
-	  // drop all FEC correction packets but no data packets (everything should be still recoverable
-	  if (fragmentIdx >= k) {
-		std::cout << "Dropping FEC-CORRECTION packet:[" << blockIdx << "," << (int)fragmentIdx << "]\n";
-		return;
-	  }
-	} else if (DROP_MODE == 1) {
-	  // drop 1 data packet and let FEC do its magic
-	  if (fragmentIdx == 0) {
-		std::cout << "Dropping FEC-DATA packet:[" << blockIdx << "," << (int)fragmentIdx << "]\n";
-		return;
-	  }
-	} else if (DROP_MODE == 2) {
-	  // drop 1 data packet and 1 FEC packet but that still shouldn't pose any issues
-	  if (fragmentIdx == 0) {
-		std::cout << "Dropping FEC-DATA packet:[" << blockIdx << "," << (int)fragmentIdx << "]\n";
-		return;
-	  } else if (fragmentIdx == k - 1) {
-		std::cout << "Dropping FEC-CORRECTION packet:[" << blockIdx << "," << (int)fragmentIdx << "]\n";
-		return;
-	  }
-	}
-	if (SEND_DUPLICATES) {
-	  // emulate not more than N multiple wifi cards as rx
-	  const auto duplicates = std::rand() % 8;
-	  for (int i = 0; i < duplicates + 1; i++) {
-		decoder.validateAndProcessPacket(nonce,
-										 std::vector<uint8_t>(payload, payload + payloadSize));
-	  }
-	} else {
-	  decoder.validateAndProcessPacket(nonce, std::vector<uint8_t>(payload, payload + payloadSize));
-	}
-  };
-  const auto cb2 = [&testOut](const uint8_t *payload, std::size_t payloadSize)mutable {
-	testOut.emplace_back(payload, payload + payloadSize);
-  };
-  encoder.outputDataCallback = cb1;
-  decoder.mSendDecodedPayloadCallback = cb2;
-  for (std::size_t i = 0; i < testIn.size(); i++) {
-	const auto &in = testIn[i];
-	encoder.encodePacket(in.data(), in.size());
-	// every time we have sent enough packets to form a block, check if everything arrived
-	// This way we would also catch any unwanted latency created by the decoder as an error
-	if (i % k == 0 && i > 0) {
-	  for (std::size_t j = 0; j < i; j++) {
-		assert(GenericHelper::compareVectors(testIn[j], testOut[j]) == true);
-	  }
-	}
-  }
-  // just to be sure, check again
-  assert(testIn.size() == testOut.size());
-  for (std::size_t i = 0; i < testIn.size(); i++) {
-	const auto &in = testIn[i];
-	const auto &out = testOut[i];
-	assert(GenericHelper::compareVectors(in, out) == true);
-  }*/
-}
-
-static void testWithPacketLossButEverythingIsRecoverable(const int k,
-														 const unsigned int percentage,
-														 const std::size_t N_PACKETS,
-														 const int DROP_MODE) {
-  std::vector<std::vector<uint8_t>> testIn;
-  for (std::size_t i = 0; i < N_PACKETS; i++) {
-	const auto size = (rand() % FEC_MAX_PAYLOAD_SIZE) + 1;
-	testIn.push_back(GenericHelper::createRandomDataBuffer(size));
-  }
-  testWithPacketLossButEverythingIsRecoverable(k, percentage, testIn, DROP_MODE, false);
-}
 }
 
 namespace TestEncryption {
@@ -358,7 +228,7 @@ int main(int argc, char *argv[]) {
 	}
   }
   print_optimization_method();
-  TestFEC::x_testWithRandomBlockSizes();
+  TestFEC::test_random_bs_fs_overhead_dropped();
 
   try {
 	if (test_mode == 0 || test_mode == 1) {
@@ -368,7 +238,7 @@ int main(int argc, char *argv[]) {
 	  testFecCPlusPlusWrapperX();
 	  const int N_PACKETS = 1200;
 	  // With these fec params "testWithoutPacketLoss" is not possible
-	  const std::vector<std::pair<unsigned int, unsigned int>> fecParams1 = {
+	  /*const std::vector<std::pair<unsigned int, unsigned int>> fecParams1 = {
 		  {1, 0}, {1, 100},
 		  {2, 0}, {2, 50}, {2, 100}
 	  };
@@ -377,7 +247,7 @@ int main(int argc, char *argv[]) {
 		const auto p = fecParam.second;
 		TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
 		TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
-	  }
+	  }*/
 	  // only test with FEC enabled
 	  const std::vector<std::pair<unsigned int, unsigned int>> fecParams = {
 		  {1, 200},
@@ -393,11 +263,11 @@ int main(int argc, char *argv[]) {
 	  for (const auto &fecParam: fecParams) {
 		const auto k = fecParam.first;
 		const auto p = fecParam.second;
-		TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
-		TestFEC::testWithoutPacketLossDynamicPacketSize(k, p, N_PACKETS);
+		/*TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
+		TestFEC::testWithoutPacketLossDynamicPacketSize(k, p, N_PACKETS);*/
 		TestFEC::testRxQueue(k, p);
 		for (int dropMode = 1; dropMode < 2; dropMode++) {
-		  TestFEC::testWithPacketLossButEverythingIsRecoverable(k, p, N_PACKETS, dropMode);
+		  //TestFEC::testWithPacketLossButEverythingIsRecoverable(k, p, N_PACKETS, dropMode);
 		}
 	  }
 	  TestFEC::testWithoutPacketLossDynamicBlockSize();
