@@ -140,7 +140,7 @@ class FECEncoder {
     for(int i=0;i<n_secondary_fragments;i++){
       auto fragment_index=i+n_primary_fragments;
       if(outputDataCallback){
-        outputDataCallback(m_block_buffer[fragment_index].data(),max_packet_size+sizeof(uint16_t));
+        outputDataCallback(m_block_buffer[fragment_index].data(),sizeof(FECPayloadHdr)+max_packet_size);
       }
     }
   }
@@ -295,7 +295,7 @@ class RxBlock {
     // do not reconstruct if reconstruction is impossible
     assert(getNAvailableFragments() >= blu_n_primary_fragments);
     // also do not reconstruct if reconstruction is not needed
-    const int nMissingPrimaryFragments = blu_n_primary_fragments- n_available_primary_fragments;
+   // const int nMissingPrimaryFragments = blu_n_primary_fragments- n_available_primary_fragments;
     auto recoveredFragmentIndices = fecDecode(blu_size_of_secondary_fragments, blockBuffer, blu_n_primary_fragments, fragment_map);
     for (const auto idx: recoveredFragmentIndices) {
       fragment_map[idx] = AVAILABLE;
