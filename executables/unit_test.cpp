@@ -40,18 +40,6 @@ using namespace bla;
 
 namespace TestFEC {
 
-static void testNonce() {
-  /*const uint32_t blockIdx = 0;
-  const uint16_t fragmentIdx = 0;
-  const uint16_t number = 1;
-  const FECNonce fecNonce{blockIdx, fragmentIdx, false, number};
-  const auto nonce = (uint64_t)fecNonce;
-  const auto fecNonce2 = fecNonceFrom(nonce);
-  assert(fecNonce2.blockIdx == blockIdx);
-  assert(fecNonce2.fragmentIdx == fragmentIdx);
-  assert(fecNonce2.flag == 0);
-  assert(fecNonce2.number == number);*/
-}
 
 static void x_testWithRandomBlockSizes(){
   wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes begin");
@@ -379,7 +367,6 @@ int main(int argc, char *argv[]) {
 	  test_fec();
 	  testFecCPlusPlusWrapperX();
 	  const int N_PACKETS = 1200;
-	  TestFEC::testNonce();
 	  // With these fec params "testWithoutPacketLoss" is not possible
 	  const std::vector<std::pair<unsigned int, unsigned int>> fecParams1 = {
 		  {1, 0}, {1, 100},
