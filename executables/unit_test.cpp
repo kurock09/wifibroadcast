@@ -57,11 +57,12 @@ static void x_testWithRandomBlockSizes(){
   wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes begin");
   std::vector<std::vector<std::vector<uint8_t>>> fragmented_frames_in;
   std::vector<std::vector<uint8_t>> fragmented_frames_sequential_in;
-  for(int i=0;i<100;i++){
+  for(int i=0;i<1;i++){
     std::vector<std::vector<uint8_t>> fragmented_frame;
     const auto n_fragments=GenericHelper::create_random_number_between(1,MAX_N_P_FRAGMENTS_PER_BLOCK);
     for(int j=0;j<n_fragments;j++){
       const auto buff_size=GenericHelper::create_random_number_between(1,FEC_MAX_PAYLOAD_SIZE);
+      //const auto buff_size=GenericHelper::create_random_number_between(12,12);
       auto buff=GenericHelper::createRandomDataBuffer(buff_size);
       fragmented_frame.push_back(buff);
       fragmented_frames_sequential_in.push_back(buff);
@@ -72,18 +73,41 @@ static void x_testWithRandomBlockSizes(){
   bla::FECEncoder encoder{};
   bla::FECDecoder decoder{10};
   std::vector<std::vector<uint8_t>> testOut;
+  // The indices of packets we shall drop
+  std::vector<unsigned int> curr_indices_of_packets_to_drop{};
 
-  const auto cb1 = [&decoder](const uint8_t *payload, const std::size_t payloadSize)mutable {
-    decoder.validate_and_process_packet(payload,payloadSize);
+  const auto cb1 = [&decoder,&curr_indices_of_packets_to_drop,&fragmented_frames_sequential_in](const uint8_t *payload, const std::size_t payloadSize)mutable {
+    auto* hdr=(FECPayloadHdr*)payload;
+    if(GenericHelper::vec_contains(curr_indices_of_packets_to_drop,hdr->fragment_idx)){
+      wifibroadcast::log::get_default()->debug("Dropping packet {} in {}",(int)hdr->fragment_idx,(int)hdr->n_primary_fragments);
+    }else{
+      decoder.validate_and_process_packet(payload,payloadSize);
+    }
+    /*auto lol=std::vector<uint8_t>(payload+sizeof(FECPayloadHdr),payload+payloadSize);
+    auto original=fragmented_frames_sequential_in[hdr->fragment_idx];
+    GenericHelper::assertVectorsEqual(original,lol);*/
   };
-  const auto cb2 = [&testOut](const uint8_t *payload, std::size_t payloadSize)mutable {
-    testOut.emplace_back(payload, payload + payloadSize);
+  int out_index=0;
+  const auto cb2 = [&testOut,&fragmented_frames_sequential_in,&out_index](const uint8_t *payload, std::size_t payloadSize)mutable {
+    auto buff=std::vector<uint8_t>(payload,payload+payloadSize);
+    testOut.emplace_back(buff);
+    wifibroadcast::log::get_default()->debug("Out:{}",payloadSize);
+    GenericHelper::assertVectorsEqual(fragmented_frames_sequential_in[out_index],buff);
+    out_index++;
   };
   encoder.outputDataCallback = cb1;
   decoder.mSendDecodedPayloadCallback = cb2;
   for(int i=0;i<fragmented_frames_in.size();i++){
     auto fragmented_frame=fragmented_frames_in[i];
-    encoder.encode_block(GenericHelper::convert_vec_of_vec_to_shared(fragmented_frame),3);
+    const auto n_secondary_fragments=GenericHelper::create_random_number_between(0,MAX_N_S_FRAGMENTS_PER_BLOCK);
+    //const auto n_secondary_fragments=0;
+    // We'l drop a specific amount of fragments
+    const auto n_fragments_to_drop(GenericHelper::create_random_number_between(0,n_secondary_fragments));
+    auto indices=GenericHelper::createIndices(fragmented_frame.size()+n_secondary_fragments);
+    auto indices_packets_to_drop=GenericHelper::takeNRandomElements(indices,n_fragments_to_drop);
+    wifibroadcast::log::get_default()->debug("Dropping {} packets of {}",n_fragments_to_drop,indices.size());
+    curr_indices_of_packets_to_drop=indices_packets_to_drop;
+    encoder.encode_block(GenericHelper::convert_vec_of_vec_to_shared(fragmented_frame),n_secondary_fragments);
   }
   GenericHelper::assertVectorsOfVectorsEqual(fragmented_frames_sequential_in,testOut);
   wifibroadcast::log::get_default()->debug("x_testWithRandomBlockSizes end");

@@ -174,6 +174,12 @@ static std::vector<unsigned int> createIndices(const std::size_t nIndices) {
   }
   return ret;
 }
+static bool vec_contains(std::vector<unsigned int> indices,int index){
+  for(const auto i:indices){
+    if(i==index)return true;
+  }
+  return false;
+}
 template<std::size_t S>
 static std::vector<uint8_t *> convertToP(std::vector<std::array<uint8_t, S>> &buff,
                                          std::size_t offset = 0,

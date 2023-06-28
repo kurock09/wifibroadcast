@@ -38,6 +38,7 @@ struct FECPayloadHdr{
   uint16_t n_primary_fragments;
   // For FEC all data fragments have to be the same size. We pad the rest during encoding / decoding with 0,
   // and do this when encoding / decoding such that the 0 bytes don't have to be transmitted.
+  // This needs to be included during the fec encode / decode step !
   uint16_t data_size;
 }__attribute__ ((packed));
 static_assert(sizeof(FECPayloadHdr)==8);
@@ -94,7 +95,8 @@ class FECEncoder {
     // Store a pointer where the FEC data begins for performing the FEC step later on
     std::vector<const uint8_t *> primary_fragments_data_p;
     for(int i=0;i<data_packets.size();i++){
-      auto data_fragment=data_packets[i];
+      const auto& data_fragment=data_packets[i];
+      wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
       assert(data_fragment->size()>0);
       assert(data_fragment->size()<=FEC_MAX_PAYLOAD_SIZE);
       header.fragment_idx=i;
@@ -111,12 +113,13 @@ class FECEncoder {
       max_packet_size = std::max(max_packet_size, data_fragment->size());
       // we can forward the data packet immediately via the callback
       if(outputDataCallback){
-        outputDataCallback(buffer_p,sizeof(FECPayloadHdr)+data_fragment->size());
+        outputDataCallback(buffer_p,writtenDataSize);
       }
-      primary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr));
+      primary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
     }
     // then we create as many FEC packets as needed
     if(n_secondary_fragments==0){
+      wifibroadcast::log::get_default()->debug("No FEC step performed");
       // no FEC step is actually performed, usefully for debugging / performance evaluation
       return ;
     }
@@ -132,12 +135,12 @@ class FECEncoder {
       // where the FEC packet correction data is written to
       secondary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr));
     }
-    fec_encode2(max_packet_size,primary_fragments_data_p,secondary_fragments_data_p);
+    fec_encode2(max_packet_size+sizeof(uint16_t),primary_fragments_data_p,secondary_fragments_data_p);
     // and forward all the FEC correction packets
     for(int i=0;i<n_secondary_fragments;i++){
       auto fragment_index=i+n_primary_fragments;
       if(outputDataCallback){
-        outputDataCallback(m_block_buffer[fragment_index].data(),max_packet_size);
+        outputDataCallback(m_block_buffer[fragment_index].data(),max_packet_size+sizeof(uint16_t));
       }
     }
   }
@@ -199,15 +202,14 @@ class RxBlock {
   // copy the fragment data and mark it as available
   // you should check if it is already available with hasFragment() to avoid storing a fragment multiple times
   // when using multiple RX cards
-  void addFragment(const FECPayloadHdr &header, const uint8_t *data, const std::size_t dataLen) {
+  void addFragment(const uint8_t *data, const std::size_t dataLen) {
+    auto* hdr_p=(FECPayloadHdr*) data;
+    FECPayloadHdr& header=*hdr_p;
     assert(!hasFragment(header));
     assert(header.block_idx == blockIdx);
     assert(fragment_map[header.fragment_idx] == UNAVAILABLE);
     assert(header.fragment_idx < blockBuffer.size());
-    // write the data (doesn't matter if FEC data or correction packet)
-    memcpy(blockBuffer[header.fragment_idx].data(), data, dataLen);
-    // set the rest to zero such that FEC works
-    memset(blockBuffer[header.fragment_idx].data() + dataLen, 0, FEC_MAX_PACKET_SIZE - dataLen);
+    fragment_copy_payload(header.fragment_idx,data,dataLen);
     // mark it as available
     fragment_map[header.fragment_idx] = FragmentStatus::AVAILABLE;
 
@@ -222,13 +224,23 @@ class RxBlock {
       n_available_primary_fragments++;
     }else{
       n_available_secondary_fragments++;
+      const auto payload_len_including_size=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
       // all secondary fragments shall have the same size
       if(blu_size_of_secondary_fragments==-1){
-        blu_size_of_secondary_fragments=dataLen;
+        blu_size_of_secondary_fragments=payload_len_including_size;
       }else{
-        assert(blu_size_of_secondary_fragments==dataLen);
+        assert(blu_size_of_secondary_fragments==payload_len_including_size);
       }
     }
+  }
+  void fragment_copy_payload(const int fragment_idx,const uint8_t *data, const std::size_t dataLen){
+    uint8_t* buff=blockBuffer[fragment_idx].data();
+    const uint8_t* payload_p=data+sizeof(FECPayloadHdr)-sizeof(uint16_t);
+    auto payload_s=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
+    // write the data (doesn't matter if FEC data or correction packet)
+    memcpy(buff, payload_p,payload_s);
+    // set the rest to zero such that FEC works
+    memset(buff+payload_s, 0, FEC_MAX_PACKET_SIZE - payload_s);
   }
   /**
    * @returns the indices for all primary fragments that have not yet been forwarded and are available (already received or reconstructed).
@@ -253,22 +265,19 @@ class RxBlock {
     nAlreadyForwardedPrimaryFragments += (int) ret.size();
     return ret;
   }
-  const uint8_t *getDataPrimaryFragment(const uint16_t primaryFragmentIdx) {
-    assert(fragment_map[primaryFragmentIdx] == AVAILABLE);
-    return blockBuffer[primaryFragmentIdx].data()+sizeof(FECPayloadHdr)-sizeof(uint16_t);
-  }
   const uint8_t *get_primary_fragment_data_p(const int fragment_index){
     assert(fragment_map[fragment_index] == AVAILABLE);
     assert(blu_n_primary_fragments!=-1);
     assert(fragment_index<blu_n_primary_fragments);
-    return blockBuffer[fragment_index].data()+sizeof(FECPayloadHdr);
+    //return blockBuffer[fragment_index].data()+sizeof(FECPayloadHdr);
+    return blockBuffer[fragment_index].data()+sizeof(uint16_t);
   }
   const int get_primary_fragment_data_size(const int fragment_index){
     assert(fragment_map[fragment_index] == AVAILABLE);
     assert(blu_n_primary_fragments!=-1);
     assert(fragment_index<blu_n_primary_fragments);
-    FECPayloadHdr* hdr=(FECPayloadHdr*)blockBuffer[fragment_index].data();
-    return hdr->data_size;
+    uint16_t* len_p=(uint16_t*)blockBuffer[fragment_index].data();
+    return *len_p;
   }
 
   // returns the n of primary and secondary fragments for this block
@@ -501,7 +510,7 @@ class FECDecoder {
     if (block.hasFragment(header)) {
       return;
     }
-    block.addFragment(header, data,data_size);
+    block.addFragment(data,data_size);
     if (block == *rx_queue.front()) {
       //wifibroadcast::log::get_default()->debug("In front\n";
       // we are in the front of the queue (e.g. at the oldest block)
