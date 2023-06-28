@@ -119,7 +119,7 @@ class FECEncoder {
     }
     // then we create as many FEC packets as needed
     if(n_secondary_fragments==0){
-      wifibroadcast::log::get_default()->debug("No FEC step performed");
+      //wifibroadcast::log::get_default()->debug("No FEC step performed");
       // no FEC step is actually performed, usefully for debugging / performance evaluation
       return ;
     }
