@@ -10,7 +10,7 @@
 #include "SchedulingHelper.hpp"
 
 WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions options1)
-    :options(std::move(options1)),
+    :options(options1),
       m_txrx(std::move(txrx))
 {
   if(options.opt_console){
@@ -35,6 +35,8 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions optio
     };
     m_fec_disabled_encoder->outputDataCallback=cb;
   }
+  m_process_data_thread_run=true;
+  m_process_data_thread=std::make_unique<std::thread>(&WBTransmitter2::loop_process_data, this);
 }
 
 bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {

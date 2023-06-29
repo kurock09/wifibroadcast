@@ -4,20 +4,40 @@
 
 #include "../src/TxRxInstance.h"
 #include "RandomBufferPot.hpp"
+#include "../src/WBTransmitter2.h"
+#include "../src/WBReceiver2.h"
+#include "../src/wifibroadcast-spdlog.h"
 
 int main(int argc, char *const *argv) {
 
   auto card="wlxac9e17596103";
   std::vector<std::string> cards{card};
-  std::unique_ptr<TxRxInstance> tmp=std::make_unique<TxRxInstance>(cards);
-  tmp->start_receiving();
+  std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards);
+
+  TOptions options_tx{};
+  options_tx.radio_port=10;
+  options_tx.enable_fec= true;
+  std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
+
+  /*ROptions options_rx{};
+  options_rx.radio_port=10;
+  options_rx.enable_fec= true;
+  std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);
+  auto console=wifibroadcast::log::create_or_get("out_cb");
+  auto cb=[&console](const uint8_t *payload, const std::size_t payloadSize){
+      console->debug("Got data {}",payloadSize);
+  };
+  wb_rx->set_callback(cb);*/
+
+  txrx->start_receiving();
 
   const auto randomBufferPot = std::make_unique<RandomBufferPot>(1000, 1024);
 
   while (true){
     for(int i=0;i<100;i++){
       auto dummy_packet=randomBufferPot->getBuffer(i);
-      tmp->tx_inject_packet(0,dummy_packet->data(),dummy_packet->size());
+      //txrx->tx_inject_packet(0,dummy_packet->data(),dummy_packet->size());
+      wb_tx->try_enqueue_block({dummy_packet},10,10);
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
     }
   }
