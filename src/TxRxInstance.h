@@ -156,13 +156,20 @@ class TxRxInstance {
   std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
   std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
  private:
+  // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();
-  void send_session_key();;
+  // send out the session key
+  void send_session_key();
+  // called by the receive thread, wait for data to become available then pull data
   void loop_receive_packets();
+  // pull data from a pcap handle which has data available
   int loop_iter(int rx_index);
+  // called every time we have a new (raw) data packet
   void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
+  // verify and decrypt the packet if possible
   // returns true if packet could be decrypted successfully
   bool process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
+  // called avery time we have successfully decrypted a packet
   void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
 };
 
