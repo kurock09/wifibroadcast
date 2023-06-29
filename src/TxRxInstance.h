@@ -33,7 +33,7 @@ class TxRxInstance {
     // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
     bool rtl8812au_rssi_fixup=false;
   };
-  explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1=Options{});
+  explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1);
   TxRxInstance(const TxRxInstance &) = delete;
   TxRxInstance &operator=(const TxRxInstance &) = delete;
   ~TxRxInstance();

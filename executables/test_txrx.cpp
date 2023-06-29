@@ -12,7 +12,9 @@ int main(int argc, char *const *argv) {
 
   auto card="wlxac9e17596103";
   std::vector<std::string> cards{card};
-  std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards);
+  TxRxInstance::Options options_txrx{};
+  options_txrx.rtl8812au_rssi_fixup= true;
+  std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards,options_txrx);
 
   const bool enable_fec= true;
   WBTransmitter2::Options options_tx{};
