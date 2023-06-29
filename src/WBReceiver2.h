@@ -16,7 +16,7 @@
 #include "wifibroadcast-spdlog.h"
 #include "wifibroadcast.hpp"
 
-struct ROptions {
+struct ROptions2 {
   uint8_t radio_port = 0;
   // enable / disable fec
   bool enable_fec= true;
@@ -32,12 +32,12 @@ struct ROptions {
 class WBReceiver2 {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;
-  WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions options1);
+  WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1);
   WBReceiver2(const WBReceiver2 &) = delete;
   WBReceiver2 &operator=(const WBReceiver2 &) = delete;
   void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
  private:
-  const ROptions m_options;
+  const ROptions2 m_options;
   std::shared_ptr<TxRxInstance> m_txrx;
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<StatsPerRxCard> m_stats_per_card;

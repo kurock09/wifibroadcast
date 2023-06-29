@@ -19,7 +19,7 @@ int main(int argc, char *const *argv) {
   options_tx.enable_fec= true;
   std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
 
-  /*ROptions options_rx{};
+  ROptions options_rx{};
   options_rx.radio_port=10;
   options_rx.enable_fec= true;
   std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);
@@ -27,7 +27,7 @@ int main(int argc, char *const *argv) {
   auto cb=[&console](const uint8_t *payload, const std::size_t payloadSize){
       console->debug("Got data {}",payloadSize);
   };
-  wb_rx->set_callback(cb);*/
+  wb_rx->set_callback(cb);
 
   txrx->start_receiving();
 

@@ -29,6 +29,8 @@
 class TxRxInstance {
  public:
   explicit TxRxInstance(std::vector<std::string> wifi_cards);
+  TxRxInstance(const TxRxInstance &) = delete;
+  TxRxInstance &operator=(const TxRxInstance &) = delete;
   ~TxRxInstance();
   /**
    * Creates a valid injection packet which has the layout:

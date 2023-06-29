@@ -9,9 +9,9 @@
 #include "BlockSizeHelper.hpp"
 #include "SchedulingHelper.hpp"
 
-WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions options1)
+WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 options1)
     :options(options1),
-      m_txrx(std::move(txrx))
+      m_txrx(txrx)
 {
   if(options.opt_console){
     m_console=options.opt_console;

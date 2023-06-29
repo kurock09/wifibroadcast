@@ -6,9 +6,9 @@
 
 #include <utility>
 
-WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions options1)
-    : m_txrx(std::move(txrx)),
-      m_options(std::move(options1))
+WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1)
+    : m_txrx(txrx),
+      m_options((options1)
 {
   if(m_options.opt_console){
     m_console=m_options.opt_console;
@@ -31,7 +31,7 @@ WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions options1)
   auto cb=[this](uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len){
     this->on_new_packet(nonce,wlan_index,data,data_len);
   };
-  m_txrx->rx_register_specific_cb(m_options.radio_port,cb);
+  //m_txrx->rx_register_specific_cb(m_options.radio_port,cb);
 }
 
 void WBReceiver2::set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback) {

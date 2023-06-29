@@ -20,7 +20,7 @@
 // Note: The UDP port is missing as an option here, since it is not an option
 // for WFBTransmitter anymore.
 // Only an option when you run this program via the command line.
-struct TOptions {
+struct TOptions2 {
   // the radio port is what is used as an index to multiplex multiple streams (telemetry,video,...)
   // into the one wfb stream
   uint8_t radio_port = 1;
@@ -62,7 +62,7 @@ class WBTransmitter2 {
   // only valid when actually doing FEC
   FECTxStats get_latest_fec_stats();
  private:
-  const TOptions options;
+  const TOptions2 options;
   std::shared_ptr<TxRxInstance> m_txrx;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<bla::FECEncoder> m_fec_encoder = nullptr;
