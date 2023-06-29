@@ -351,4 +351,10 @@ void TxRxInstance::threadsafe_update_radiotap_header(
   auto newRadioTapHeader=RadiotapHeader{params};
   m_radiotap_header =newRadioTapHeader;
 }
+TxRxInstance::RxStats TxRxInstance::get_rx_stats() {
+  return TxRxInstance::RxStats();
+}
 
+TxRxInstance::RxStatsPerCard TxRxInstance::get_rx_stats_for_card(int card_index) {
+  return TxRxInstance::RxStatsPerCard();
+}

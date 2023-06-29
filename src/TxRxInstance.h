@@ -12,20 +12,19 @@
 #include "RadiotapHeader.hpp"
 #include "RawTransmitter.hpp"
 #include "SeqNrHelper.hpp"
+#include "WBReceiverStats.hpp"
 #include "wifibroadcast.hpp"
 
 /**
  * Wraps one or more wifi card in monitor mode
- * Provides easy interface to inject data packets and register a callback to process received data packets
- * Adds packet encryption and authentication via libsodium (can be disabled for performance)
- * Allows multiplexing of multiple data streams (radio_port)
- * Quick usage description by example:
- * System 1: card 1
- * System 2: card 2
- * air in between card 1 and card 2
- * Create an instance of  TxRxInstance on system 1 and system 2
- * inject packets using TxRxInstance on system 1 -> receive them using TxRxInstance on system 2
- * inject packets using TxRxInstance on system 2 -> receive them using TxRxInstance on system 1
+ * Provides easy interface to inject data packets and register a callback to
+ * process received data packets Adds packet encryption and authentication via
+ * libsodium (can be disabled for performance) Allows multiplexing of multiple
+ * data streams (radio_port) Quick usage description by example: System 1: card
+ * 1 System 2: card 2 air in between card 1 and card 2 Create an instance of
+ * TxRxInstance on system 1 and system 2 inject packets using TxRxInstance on
+ * system 1 -> receive them using TxRxInstance on system 2 inject packets using
+ * TxRxInstance on system 2 -> receive them using TxRxInstance on system 1
  */
 class TxRxInstance {
  public:
@@ -95,14 +94,22 @@ class TxRxInstance {
      uint64_t count_tx_injections_error_hint;
    };
    struct RxStats{
-     struct StatsPerCard{
-
-     };
      // Total count of received packets - can be from another wb tx, but also from someone else using wifi
-     int64_t count_p_any;
+     int64_t count_p_any=0;
      // Total count of valid received packets (decrypted)
-     int64_t count_p_valid;
+     int64_t count_p_valid=0;
+     // mcs index on the most recent okay data packet, if the card supports reporting it
+     int last_received_packet_mcs_index=-1;
+     // channel width (20Mhz or 40Mhz) on the most recent received okay data packet, if the card supports reporting it
+     int last_received_packet_channel_width=-1;
    };
+   struct RxStatsPerCard{
+     RSSIForWifiCard rssi_for_wifi_card{};
+     int64_t count_p_any=0;
+     int64_t count_p_valid=0;
+   };
+   RxStats get_rx_stats();
+   RxStatsPerCard get_rx_stats_for_card(int card_index);
  private:
   const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;
