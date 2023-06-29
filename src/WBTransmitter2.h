@@ -15,6 +15,7 @@
 #include "FECEnabled2.h"
 #include "TimeHelper.hpp"
 #include "TxRxInstance.h"
+#include "WBTransmitterStats.hpp"
 
 // Note: The UDP port is missing as an option here, since it is not an option
 // for WFBTransmitter anymore.
@@ -33,6 +34,8 @@ struct TOptions {
   bool enable_fec= true;
   // for development, log time items spend in the data queue (it should be close to 0)
   bool log_time_spent_in_atomic_queue=false;
+  // overwrite the console used for logging
+  std::shared_ptr<spdlog::logger> opt_console=nullptr;
 };
 
 class WBTransmitter2 {
@@ -54,6 +57,10 @@ class WBTransmitter2 {
    * @return true on success (space in the block queue), false otherwise
    */
   bool try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size,int fec_overhead_perc);
+  // statistcs
+  WBTxStats get_latest_stats();
+  // only valid when actually doing FEC
+  FECTxStats get_latest_fec_stats();
  private:
   const TOptions options;
   std::shared_ptr<TxRxInstance> m_txrx;
@@ -88,6 +95,7 @@ class WBTransmitter2 {
   void loop_process_data();
   void process_enqueued_packet(const EnqueuedPacket& packet);
   void process_enqueued_block(const EnqueuedBlock& block);
+  void send_packet(const uint8_t* packet,int packet_len);
 };
 
 #endif  // WIFIBROADCAST_WBTRANSMITTER2_H

@@ -9,17 +9,31 @@
 #include "BlockSizeHelper.hpp"
 #include "SchedulingHelper.hpp"
 
-WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,
-                               TOptions options1)
-    :options(options1),
+WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions options1)
+    :options(std::move(options1)),
       m_txrx(std::move(txrx))
 {
+  if(options.opt_console){
+    m_console=options.opt_console;
+  }else{
+    m_console=wifibroadcast::log::create_or_get("wb_tx"+std::to_string(options.radio_port));
+  }
+  assert(m_console);
+  m_console->info("WBTransmitter radio_port: {} fec:{}", options.radio_port, options.enable_fec ? "Y" : "N");
   if(options.enable_fec){
     m_block_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedBlock>>>(options.block_data_queue_size);
     m_fec_encoder = std::make_unique<bla::FECEncoder>();
+    auto cb=[this](const uint8_t* packet,int packet_len){
+      send_packet(packet,packet_len);
+    };
+    m_fec_encoder->outputDataCallback=cb;
   }else{
     m_packet_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedPacket>>>(options.packet_data_queue_size);
     m_fec_disabled_encoder = std::make_unique<FECDisabledEncoder>();
+    auto cb=[this](const uint64_t nonce,const uint8_t* packet,int packet_len){
+      send_packet(packet,packet_len);
+    };
+    m_fec_disabled_encoder->outputDataCallback=cb;
   }
 }
 
@@ -57,6 +71,15 @@ bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<u
   }
   return res;
 }
+
+FECTxStats WBTransmitter2::get_latest_fec_stats() {
+  return FECTxStats();
+}
+
+WBTxStats WBTransmitter2::get_latest_stats() {
+  return WBTxStats();
+}
+
 
 void WBTransmitter2::loop_process_data() {
   SchedulingHelper::setThreadParamsMaxRealtime();
@@ -102,4 +125,8 @@ void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock&
     const auto n_secondary_f=bla::calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
     m_fec_encoder->encode_block(x_block,n_secondary_f);
   }
+}
+
+void WBTransmitter2::send_packet(const uint8_t* packet, int packet_len) {
+  m_txrx->tx_inject_packet(options.radio_port,packet,packet_len);
 }
