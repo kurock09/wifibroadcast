@@ -9,7 +9,7 @@
 #include "BlockSizeHelper.hpp"
 #include "SchedulingHelper.hpp"
 
-WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 options1)
+WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,Options options1)
     :options(options1),
       m_txrx(txrx)
 {

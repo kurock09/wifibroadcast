@@ -16,28 +16,27 @@
 #include "wifibroadcast-spdlog.h"
 #include "wifibroadcast.hpp"
 
-struct ROptions2 {
-  uint8_t radio_port = 0;
-  // enable / disable fec
-  bool enable_fec= true;
-  // RX queue depth (max n of blocks that can be buffered in the rx pipeline)
-  // Use 1 if you have a single RX card, since anything else can result in stuttering (but might/is required for multiple rx card(s))
-  unsigned int rx_queue_depth=1;
-  // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
-  bool rtl8812au_rssi_fixup=false;
-  // overwrite the console used for logging
-  std::shared_ptr<spdlog::logger> opt_console=nullptr;
-};
-
 class WBReceiver2 {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;
-  WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1);
+  struct Options {
+    uint8_t radio_port = 0;
+    // enable / disable fec
+    bool enable_fec= true;
+    // RX queue depth (max n of blocks that can be buffered in the rx pipeline)
+    // Use 1 if you have a single RX card, since anything else can result in stuttering (but might/is required for multiple rx card(s))
+    unsigned int rx_queue_depth=1;
+    // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
+    bool rtl8812au_rssi_fixup=false;
+    // overwrite the console used for logging
+    std::shared_ptr<spdlog::logger> opt_console=nullptr;
+  };
+  WBReceiver2(std::shared_ptr<TxRxInstance> txrx,Options options1);
   WBReceiver2(const WBReceiver2 &) = delete;
   WBReceiver2 &operator=(const WBReceiver2 &) = delete;
   void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
  private:
-  const ROptions2 m_options;
+  const Options m_options;
   std::shared_ptr<TxRxInstance> m_txrx;
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<StatsPerRxCard> m_stats_per_card;

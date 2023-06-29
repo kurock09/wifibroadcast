@@ -6,7 +6,7 @@
 
 #include <utility>
 
-WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1)
+WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,Options options1)
     : m_txrx(txrx),
       m_options(options1)
 {

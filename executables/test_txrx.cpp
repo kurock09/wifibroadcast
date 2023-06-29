@@ -15,12 +15,12 @@ int main(int argc, char *const *argv) {
   std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards);
 
   const bool enable_fec= true;
-  TOptions2 options_tx{};
+  WBTransmitter2::Options options_tx{};
   options_tx.radio_port=10;
   options_tx.enable_fec= enable_fec;
   std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
 
-  ROptions2 options_rx{};
+  WBReceiver2::Options options_rx{};
   options_rx.radio_port=10;
   options_rx.enable_fec= enable_fec;
   std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);

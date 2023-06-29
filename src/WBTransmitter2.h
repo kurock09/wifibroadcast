@@ -17,28 +17,26 @@
 #include "TxRxInstance.h"
 #include "WBTransmitterStats.hpp"
 
-
-struct TOptions2 {
-  // the radio port is what is used as an index to multiplex multiple streams (telemetry,video,...)
-  // into the one wfb stream
-  uint8_t radio_port = 1;
-  // size of packet data queue
-  int packet_data_queue_size=64;
-  // size of block / frame data queue
-  int block_data_queue_size=2;
-  // Even though setting the fec_k parameter / n of primary fragments creates similar characteristics as a link
-  // without fec, we have a special impl. when fec is disabled, since there we allow packets out of order and with fec_k == 1 you'd have
-  // packet re-ordering / packets out of order are not possible.
-  bool enable_fec= true;
-  // for development, log time items spend in the data queue (it should be close to 0)
-  bool log_time_spent_in_atomic_queue=false;
-  // overwrite the console used for logging
-  std::shared_ptr<spdlog::logger> opt_console=nullptr;
-};
-
 class WBTransmitter2 {
  public:
-  WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 options);
+  struct Options {
+    // the radio port is what is used as an index to multiplex multiple streams (telemetry,video,...)
+    // into the one wfb stream
+    uint8_t radio_port = 1;
+    // size of packet data queue
+    int packet_data_queue_size=64;
+    // size of block / frame data queue
+    int block_data_queue_size=2;
+    // Even though setting the fec_k parameter / n of primary fragments creates similar characteristics as a link
+    // without fec, we have a special impl. when fec is disabled, since there we allow packets out of order and with fec_k == 1 you'd have
+    // packet re-ordering / packets out of order are not possible.
+    bool enable_fec= true;
+    // for development, log time items spend in the data queue (it should be close to 0)
+    bool log_time_spent_in_atomic_queue=false;
+    // overwrite the console used for logging
+    std::shared_ptr<spdlog::logger> opt_console=nullptr;
+  };
+  WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,Options options);
   WBTransmitter2(const WBTransmitter2 &) = delete;
   WBTransmitter2 &operator=(const WBTransmitter2 &) = delete;
   ~WBTransmitter2();
@@ -63,7 +61,7 @@ class WBTransmitter2 {
   // only valid when actually doing FEC
   FECTxStats get_latest_fec_stats();
  private:
-  const TOptions2 options;
+  const Options options;
   std::shared_ptr<TxRxInstance> m_txrx;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<bla::FECEncoder> m_fec_encoder = nullptr;
