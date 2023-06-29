@@ -34,6 +34,7 @@ class WBReceiver2 {
   WBReceiver2(const WBReceiver2 &) = delete;
   WBReceiver2 &operator=(const WBReceiver2 &) = delete;
   void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
+  WBReceiverStats get_latest_stats();
  private:
   const Options m_options;
   std::shared_ptr<TxRxInstance> m_txrx;
