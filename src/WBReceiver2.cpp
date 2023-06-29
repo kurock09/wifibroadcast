@@ -40,8 +40,8 @@ void WBReceiver2::set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_cal
 
 void WBReceiver2::set_latest_stats(WBReceiverStats new_stats) {
 
-
 }
+
 void WBReceiver2::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *data,const std::size_t data_len) {
   if(m_options.enable_fec){
     m_fec_decoder->validate_and_process_packet(data,data_len);
