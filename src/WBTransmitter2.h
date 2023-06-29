@@ -41,6 +41,9 @@ struct TOptions2 {
 class WBTransmitter2 {
  public:
   WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 options);
+  WBTransmitter2(const WBTransmitter2 &) = delete;
+  WBTransmitter2 &operator=(const WBTransmitter2 &) = delete;
+  ~WBTransmitter2();
   /**
    * Enqueue a packet to be processed. FEC needs to be disabled in this mode.
    * Guaranteed to return immediately.

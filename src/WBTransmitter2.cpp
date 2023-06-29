@@ -39,6 +39,13 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 opti
   m_process_data_thread=std::make_unique<std::thread>(&WBTransmitter2::loop_process_data, this);
 }
 
+WBTransmitter2::~WBTransmitter2() {
+  m_process_data_thread_run= false;
+  if(m_process_data_thread && m_process_data_thread->joinable()){
+    m_process_data_thread->join();
+  }
+}
+
 bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
   assert(!options.enable_fec);
   //m_count_bytes_data_provided +=packet->size();
