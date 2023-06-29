@@ -14,14 +14,15 @@ int main(int argc, char *const *argv) {
   std::vector<std::string> cards{card};
   std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards);
 
+  const bool enable_fec= true;
   TOptions2 options_tx{};
   options_tx.radio_port=10;
-  options_tx.enable_fec= true;
+  options_tx.enable_fec= enable_fec;
   std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
 
   ROptions2 options_rx{};
   options_rx.radio_port=10;
-  options_rx.enable_fec= true;
+  options_rx.enable_fec= enable_fec;
   std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);
   auto console=wifibroadcast::log::create_or_get("out_cb");
   auto cb=[&console](const uint8_t *payload, const std::size_t payloadSize){
@@ -37,7 +38,11 @@ int main(int argc, char *const *argv) {
     for(int i=0;i<100;i++){
       auto dummy_packet=randomBufferPot->getBuffer(i);
       //txrx->tx_inject_packet(0,dummy_packet->data(),dummy_packet->size());
-      wb_tx->try_enqueue_block({dummy_packet},10,10);
+      if(enable_fec){
+        wb_tx->try_enqueue_block({dummy_packet},10,10);
+      }else{
+        wb_tx->try_enqueue_packet(dummy_packet);
+      }
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
     }
   }
