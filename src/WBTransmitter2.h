@@ -17,9 +17,7 @@
 #include "TxRxInstance.h"
 #include "WBTransmitterStats.hpp"
 
-// Note: The UDP port is missing as an option here, since it is not an option
-// for WFBTransmitter anymore.
-// Only an option when you run this program via the command line.
+
 struct TOptions2 {
   // the radio port is what is used as an index to multiplex multiple streams (telemetry,video,...)
   // into the one wfb stream
