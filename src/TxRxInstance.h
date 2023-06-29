@@ -6,12 +6,13 @@
 #define WIFIBROADCAST_TXRXINSTANCE_H
 
 #include <atomic>
+#include <map>
 
 #include "Encryption.hpp"
 #include "RadiotapHeader.hpp"
 #include "RawTransmitter.hpp"
-#include "wifibroadcast.hpp"
 #include "SeqNrHelper.hpp"
+#include "wifibroadcast.hpp"
 
 /**
  * Wraps one or more wifi card in monitor mode
@@ -48,7 +49,9 @@ class TxRxInstance {
    * @param radio_port: the multiplex index used to separate streams during injection
    */
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
+  typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len)> SPECIFIC_OUTPUT_DATA_CB;
   void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
+  void rx_register_specific_cb(const uint8_t radioPort,SPECIFIC_OUTPUT_DATA_CB cb);
 
   /**
    * Receiving packets happens in the background in another thread.
@@ -123,6 +126,7 @@ class TxRxInstance {
     uint64_t count_valid_packets=0;
   };
   std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
+  std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H

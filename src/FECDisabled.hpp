@@ -16,6 +16,8 @@
 #include <iostream>
 #include <functional>
 #include <map>
+#include <limits>
+#include <cassert>
 
 // FEC Disabled is used for telemetry data in OpenHD.
 // We have different requirements on packet loss and/or packet reordering for this type of data stream.

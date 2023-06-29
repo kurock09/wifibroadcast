@@ -35,6 +35,17 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
   m_session_key_announce_ts = std::chrono::steady_clock::now()+SESSION_KEY_ANNOUNCE_DELTA;
 }
 
+TxRxInstance::~TxRxInstance() {
+  stop_receiving();
+  for(auto& fd: m_receive_pollfds){
+    close(fd.fd);
+  }
+  for(auto& pcapTxRx:m_pcap_handles){
+    pcap_close(pcapTxRx.rx);
+    pcap_close(pcapTxRx.tx);
+  }
+}
+
 void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
                                     const uint8_t* data, int data_len) {
   // new wifi packet
@@ -79,6 +90,10 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
 
 void TxRxInstance::rx_register_callback(TxRxInstance::OUTPUT_DATA_CALLBACK cb) {
   m_output_cb=std::move(cb);
+}
+
+void TxRxInstance::rx_register_specific_cb(const uint8_t radioPort,TxRxInstance::SPECIFIC_OUTPUT_DATA_CB cb) {
+  m_specific_callbacks[radioPort]=std::move(cb);
 }
 
 void TxRxInstance::set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx) {
@@ -240,9 +255,18 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
 }
 
 void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len) {
+  bool forwarded= false;
   if(m_output_cb!= nullptr){
     m_output_cb(nonce,wlan_index,radioPort,data,data_len);
-  }else{
+    forwarded= true;
+  }
+  auto specific=m_specific_callbacks.find(radioPort);
+  if(specific!=m_specific_callbacks.end()){
+    SPECIFIC_OUTPUT_DATA_CB specific_cb=specific->second;
+    specific_cb(nonce,wlan_index,data,data_len);
+    forwarded= true;
+  }
+  if(!forwarded){
     m_console->debug("Got valid packet nonce:{} wlan_idx:{} radio_port:{} size:{}",nonce,wlan_index,radioPort,data_len);
   }
 }
@@ -324,13 +348,3 @@ void TxRxInstance::threadsafe_update_radiotap_header(
   m_radiotap_header =newRadioTapHeader;
 }
 
-TxRxInstance::~TxRxInstance() {
-  stop_receiving();
-  for(auto& fd: m_receive_pollfds){
-    close(fd.fd);
-  }
-  for(auto& pcapTxRx:m_pcap_handles){
-    pcap_close(pcapTxRx.rx);
-    pcap_close(pcapTxRx.tx);
-  }
-}
