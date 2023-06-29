@@ -29,7 +29,11 @@
  */
 class TxRxInstance {
  public:
-  explicit TxRxInstance(std::vector<std::string> wifi_cards);
+  struct Options{
+    // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
+    bool rtl8812au_rssi_fixup=false;
+  };
+  explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1=Options{});
   TxRxInstance(const TxRxInstance &) = delete;
   TxRxInstance &operator=(const TxRxInstance &) = delete;
   ~TxRxInstance();
@@ -97,6 +101,7 @@ class TxRxInstance {
      int64_t count_p_valid;
    };
  private:
+  const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
   std::chrono::steady_clock::time_point m_session_key_announce_ts{};

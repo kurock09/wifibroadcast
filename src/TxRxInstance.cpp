@@ -8,8 +8,9 @@
 
 #include "RawReceiver.hpp"
 
-TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards)
-    : m_wifi_cards(std::move(wifi_cards)),
+TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
+    : m_options(options1),
+      m_wifi_cards(std::move(wifi_cards)),
       m_radiotap_header(RadiotapHeader::UserSelectableParams{})
 {
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
