@@ -95,6 +95,9 @@ class TxRxInstance {
      uint64_t count_tx_injections_error_hint;
    };
    struct RxStats{
+     struct StatsPerCard{
+
+     };
      // Total count of received packets - can be from another wb tx, but also from someone else using wifi
      int64_t count_p_any;
      // Total count of valid received packets (decrypted)
@@ -148,7 +151,8 @@ class TxRxInstance {
   void loop_receive_packets();
   int loop_iter(int rx_index);
   void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
-  void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
+  // returns true if packet could be decrypted successfully
+  bool process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
   void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
   // After calling this method, the injected packets will use a different radiotap header
   // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct

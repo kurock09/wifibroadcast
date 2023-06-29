@@ -226,12 +226,14 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       }
       return ;
     }
-    process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
+    const bool valid=process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
+    if(valid){
+      //TODO
+    }
   }
 }
 
-
-void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,const size_t pkt_payload_size) {
+bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,const size_t pkt_payload_size) {
   std::shared_ptr<std::vector<uint8_t>> decrypted=std::make_shared<std::vector<uint8_t>>(pkt_payload_size-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES);
   // nonce comes first
   auto* nonce_p=(uint64_t*) pkt_payload;
@@ -249,9 +251,10 @@ void TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
       m_seq_nr_helper.on_new_sequence_number(tmp);
       m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
     }
-  }else{
-    m_console->debug("Got non-wb packet {}",radio_port);
+    return true;
   }
+  m_console->debug("Got non-wb packet {}",radio_port);
+  return false;
 }
 
 void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len) {
