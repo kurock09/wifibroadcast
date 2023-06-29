@@ -82,9 +82,20 @@ class FECEncoder {
   // and creating the wanted amount of secondary packets
   std::array<std::array<uint8_t, FEC_MAX_PACKET_SIZE>,MAX_TOTAL_FRAGMENTS_PER_BLOCK> m_block_buffer{};
   uint16_t m_curr_block_idx=0;
+  AvgCalculator m_fec_block_encode_time;
+  MinMaxAvg<std::chrono::nanoseconds> m_curr_fec_block_encode_time{};
+  BaseAvgCalculator<uint16_t> m_block_sizes{};
+  MinMaxAvg<uint16_t> m_curr_fec_block_sizes{};
  public:
   void encode_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,int n_secondary_fragments){
     const auto n_primary_fragments=data_packets.size();
+    // nice to have statistic
+    m_block_sizes.add(n_primary_fragments);
+    if(m_block_sizes.get_delta_since_last_reset()>=std::chrono::seconds(1)){
+      //wifibroadcast::log::get_default()->debug("Block sizes: {}",m_block_sizes.getAvgReadable());
+      m_curr_fec_block_sizes=m_block_sizes.getMinMaxAvg();
+      m_block_sizes.reset();
+    }
     FECPayloadHdr header{};
     header.block_idx=m_curr_block_idx;
     m_curr_block_idx++;
@@ -137,6 +148,12 @@ class FECEncoder {
       secondary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
     }
     fec_encode2(max_packet_size+sizeof(uint16_t),primary_fragments_data_p,secondary_fragments_data_p);
+    m_fec_block_encode_time.add(std::chrono::steady_clock::now()-before);
+    if(m_fec_block_encode_time.get_delta_since_last_reset()>=std::chrono::seconds(1)){
+      //wifibroadcast::log::get_default()->debug("FEC encode time:{}",m_fec_block_encode_time.getAvgReadable());
+      m_curr_fec_block_encode_time=m_fec_block_encode_time.getMinMaxAvg();
+      m_fec_block_encode_time.reset();
+    }
     // and forward all the FEC correction packets
     for(int i=0;i<n_secondary_fragments;i++){
       auto fragment_index=i+n_primary_fragments;
