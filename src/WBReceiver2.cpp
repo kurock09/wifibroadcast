@@ -8,7 +8,7 @@
 
 WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1)
     : m_txrx(txrx),
-      m_options((options1)
+      m_options(options1)
 {
   if(m_options.opt_console){
     m_console=m_options.opt_console;

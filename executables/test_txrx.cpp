@@ -14,12 +14,12 @@ int main(int argc, char *const *argv) {
   std::vector<std::string> cards{card};
   std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards);
 
-  TOptions options_tx{};
+  TOptions2 options_tx{};
   options_tx.radio_port=10;
   options_tx.enable_fec= true;
   std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
 
-  ROptions options_rx{};
+  ROptions2 options_rx{};
   options_rx.radio_port=10;
   options_rx.enable_fec= true;
   std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);

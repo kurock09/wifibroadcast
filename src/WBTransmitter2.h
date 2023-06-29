@@ -40,7 +40,7 @@ struct TOptions2 {
 
 class WBTransmitter2 {
  public:
-  WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions options);
+  WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 options);
   /**
    * Enqueue a packet to be processed. FEC needs to be disabled in this mode.
    * Guaranteed to return immediately.
