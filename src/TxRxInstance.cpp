@@ -48,6 +48,7 @@ TxRxInstance::~TxRxInstance() {
 
 void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
                                     const uint8_t* data, int data_len) {
+  std::lock_guard<std::mutex> guard(m_tx_mutex);
   // new wifi packet
   auto packet_size=
       // Radiotap header comes first

@@ -107,6 +107,8 @@ class TxRxInstance {
     pcap_t *rx= nullptr;
   };
   std::vector<PcapTxRx> m_pcap_handles;
+  // temporary
+  std::mutex m_tx_mutex;
  private:
   bool keep_receiving= true;
   int m_n_receiver_errors=0;
