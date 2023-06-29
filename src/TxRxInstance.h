@@ -89,8 +89,8 @@ class TxRxInstance {
      uint64_t count_tx_injections_error_hint;
    };
    struct RxStats{
-     // Total count of received packets
-     int64_t count_p_received;
+     // Total count of received packets - can be from another wb tx, but also from someone else using wifi
+     int64_t count_p_any;
      // Total count of valid received packets (decrypted)
      int64_t count_p_valid;
    };
