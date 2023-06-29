@@ -18,6 +18,7 @@
  * Wraps one or more wifi card in monitor mode
  * Provides easy interface to inject data packets and register a callback to process received data packets
  * Adds packet encryption and authentication via libsodium (can be disabled for performance)
+ * Allows multiplexing of multiple data streams (radio_port)
  * Quick usage description by example:
  * System 1: card 1
  * System 2: card 2
