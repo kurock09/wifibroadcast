@@ -75,6 +75,26 @@ class TxRxInstance {
    void tx_update_guard_interval(bool short_gi);
    void tx_update_ldpc(bool ldpc);
 
+   // Statistics
+   struct TxStats{
+     int64_t n_injected_packets;
+     int64_t n_injected_bytes;
+     /*
+     // calculated in 1 second intervals
+     uint64_t current_bits_per_second;
+     // Other than bits per second, packets per second is also an important metric -
+     // Sending a lot of small packets for example should be avoided)
+     uint64_t current_packets_per_second;*/
+     // tx errors, first sign the tx can't keep up with the provided bitrate
+     uint64_t count_tx_injections_error_hint;
+   };
+   struct RxStats{
+     // Total count of received packets
+     int64_t count_p_received;
+     // Total count of valid received packets (decrypted)
+     int64_t count_p_valid;
+   };
+
  private:
   void announce_session_key_if_needed();
   void send_session_key();;
@@ -85,7 +105,7 @@ class TxRxInstance {
   void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
   void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
 
-  void on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len);
+  void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
   // After calling this method, the injected packets will use a different radiotap header
   // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
   void threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
