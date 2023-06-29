@@ -74,6 +74,9 @@ class TxRxInstance {
 
    // These are for updating injection parameters at run time. They will be applied on the next injected packet.
    // They are generally thread-safe. See RadiotapHeader for more information on what these parameters do.
+   // After calling this method, the injected packets will use a different radiotap header
+   // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
+   void tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
    void tx_update_mcs_index(uint8_t mcs_index);
    void tx_update_channel_width(int width_mhz);
    void tx_update_stbc(int stbc);
@@ -161,9 +164,6 @@ class TxRxInstance {
   // returns true if packet could be decrypted successfully
   bool process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
   void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
-  // After calling this method, the injected packets will use a different radiotap header
-  // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
-  void threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H

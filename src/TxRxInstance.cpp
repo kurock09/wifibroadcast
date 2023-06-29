@@ -317,13 +317,13 @@ void TxRxInstance::send_session_key() {
 void TxRxInstance::tx_update_mcs_index(uint8_t mcs_index) {
   m_console->debug("update_mcs_index {}",mcs_index);
   m_radioTapHeaderParams.mcs_index=mcs_index;
-  threadsafe_update_radiotap_header(m_radioTapHeaderParams);
+  tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
 void TxRxInstance::tx_update_channel_width(int width_mhz) {
   m_console->debug("update_channel_width {}",width_mhz);
   m_radioTapHeaderParams.bandwidth=width_mhz;
-  threadsafe_update_radiotap_header(m_radioTapHeaderParams);
+  tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
 void TxRxInstance::tx_update_stbc(int stbc) {
@@ -333,21 +333,20 @@ void TxRxInstance::tx_update_stbc(int stbc) {
     return ;
   }
   m_radioTapHeaderParams.stbc=stbc;
-  threadsafe_update_radiotap_header(m_radioTapHeaderParams);
+  tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
 void TxRxInstance::tx_update_guard_interval(bool short_gi) {
   m_radioTapHeaderParams.short_gi=short_gi;
-  threadsafe_update_radiotap_header(m_radioTapHeaderParams);
+  tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
 void TxRxInstance::tx_update_ldpc(bool ldpc) {
   m_radioTapHeaderParams.ldpc=ldpc;
-  threadsafe_update_radiotap_header(m_radioTapHeaderParams);
+  tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::threadsafe_update_radiotap_header(
-    const RadiotapHeader::UserSelectableParams &params) {
+void TxRxInstance::tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams &params) {
   auto newRadioTapHeader=RadiotapHeader{params};
   m_radiotap_header =newRadioTapHeader;
 }
