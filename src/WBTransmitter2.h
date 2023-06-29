@@ -57,7 +57,7 @@ class WBTransmitter2 {
    * @return true on success (space in the block queue), false otherwise
    */
   bool try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size,int fec_overhead_perc);
-  // statistcs
+  // statistics
   WBTxStats get_latest_stats();
   // only valid when actually doing FEC
   FECTxStats get_latest_fec_stats();
