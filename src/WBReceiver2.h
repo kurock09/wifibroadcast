@@ -5,7 +5,7 @@
 #ifndef WIFIBROADCAST_WBRECEIVER2_H
 #define WIFIBROADCAST_WBRECEIVER2_H
 
-#include "FECDisabled.hpp"
+#include "FECDisabled2.hpp"
 #include "FECEnabled2.h"
 #include "HelperSources/Helper.hpp"
 #include "HelperSources/SeqNrHelper.hpp"
@@ -48,7 +48,7 @@ class WBReceiver2 {
   BitrateCalculator m_received_bitrate_calculator{};
   // On the rx, either one of those two is active at the same time. NOTE: nullptr until the first session key packet
   std::unique_ptr<bla::FECDecoder> m_fec_decoder = nullptr;
-  std::unique_ptr<FECDisabledDecoder> m_fec_disabled_decoder = nullptr;
+  std::unique_ptr<FECDisabledDecoder2> m_fec_disabled_decoder = nullptr;
   std::mutex m_last_stats_mutex;
   WBReceiverStats m_last_stats{};
   void set_latest_stats(WBReceiverStats new_stats);

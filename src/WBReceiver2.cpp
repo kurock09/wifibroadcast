@@ -22,7 +22,7 @@ WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,ROptions2 options1)
     };
     m_fec_decoder->mSendDecodedPayloadCallback = cb;
   }else{
-    m_fec_disabled_decoder = std::make_unique<FECDisabledDecoder>();
+    m_fec_disabled_decoder = std::make_unique<FECDisabledDecoder2>();
     auto cb=[this](const uint8_t *data, int data_len){
       on_decoded_packet(data,data_len);
     };
@@ -46,8 +46,7 @@ void WBReceiver2::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *d
   if(m_options.enable_fec){
     m_fec_decoder->validate_and_process_packet(data,data_len);
   }else{
-    auto tmp=std::vector<uint8_t>(data,data+data_len);
-    m_fec_disabled_decoder->processRawDataBlockFecDisabled(0,tmp);
+    m_fec_disabled_decoder->process_packet(data,data_len);
   }
 }
 

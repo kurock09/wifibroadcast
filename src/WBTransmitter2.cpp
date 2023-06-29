@@ -29,8 +29,8 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,TOptions2 opti
     m_fec_encoder->outputDataCallback=cb;
   }else{
     m_packet_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedPacket>>>(options.packet_data_queue_size);
-    m_fec_disabled_encoder = std::make_unique<FECDisabledEncoder>();
-    auto cb=[this](const uint64_t nonce,const uint8_t* packet,int packet_len){
+    m_fec_disabled_encoder = std::make_unique<FECDisabledEncoder2>();
+    auto cb=[this](const uint8_t* packet,int packet_len){
       send_packet(packet,packet_len);
     };
     m_fec_disabled_encoder->outputDataCallback=cb;

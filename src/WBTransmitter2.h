@@ -11,7 +11,7 @@
 
 #include "../moodycamel/concurrentqueue/blockingconcurrentqueue.h"
 #include "../moodycamel/readerwriterqueue/readerwritercircularbuffer.h"
-#include "FECDisabled.hpp"
+#include "FECDisabled2.hpp"
 #include "FECEnabled2.h"
 #include "TimeHelper.hpp"
 #include "TxRxInstance.h"
@@ -69,7 +69,7 @@ class WBTransmitter2 {
   std::shared_ptr<TxRxInstance> m_txrx;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<bla::FECEncoder> m_fec_encoder = nullptr;
-  std::unique_ptr<FECDisabledEncoder> m_fec_disabled_encoder = nullptr;
+  std::unique_ptr<FECDisabledEncoder2> m_fec_disabled_encoder = nullptr;
   // We have two data queues with a slightly different layout (depending on the selected operating mode)
   struct EnqueuedPacket {
     std::chrono::steady_clock::time_point enqueue_time_point=std::chrono::steady_clock::now();
