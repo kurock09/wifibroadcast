@@ -228,7 +228,22 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     }
     const bool valid=process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
     if(valid){
-      //TODO
+      // We only use known "good" packets for those stats.
+      auto &this_wifi_card_stats = m_rx_packet_stats.at(wlan_idx);
+      auto& rssi_for_this_card=this_wifi_card_stats.rssi_for_wifi_card;
+      //m_console->debug("{}",all_rssi_to_string(parsedPacket->allAntennaValues));
+      const auto best_rssi=RawReceiverHelper::get_best_rssi_of_card(parsedPacket->allAntennaValues);
+      //m_console->debug("best_rssi:{}",(int)best_rssi);
+      if(best_rssi.has_value()){
+        rssi_for_this_card.addRSSI(best_rssi.value());
+      }
+      this_wifi_card_stats.count_received_packets++;
+      if(parsedPacket->mcs_index.has_value()){
+        m_rx_stats.last_received_packet_mcs_index=parsedPacket->mcs_index.value();
+      }
+      if(parsedPacket->channel_width.has_value()){
+        m_rx_stats.last_received_packet_channel_width=parsedPacket->channel_width.value();
+      }
     }
   }
 }

@@ -146,12 +146,15 @@ class TxRxInstance {
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
+  RxStats m_rx_stats;
+  TxStats m_tx_stats;
   // Receiving packet statistics
   struct RxPacketStatsPerCard{
     // total number of received packets (can come from non-wb, too)
     uint64_t count_received_packets=0;
     // total number of successfully validated & decrypted packets
     uint64_t count_valid_packets=0;
+    RSSIForWifiCard rssi_for_wifi_card{};
   };
   std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
   std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
