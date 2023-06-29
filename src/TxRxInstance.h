@@ -94,21 +94,6 @@ class TxRxInstance {
      // Total count of valid received packets (decrypted)
      int64_t count_p_valid;
    };
-
- private:
-  void announce_session_key_if_needed();
-  void send_session_key();;
-
-  void loop_receive_packets();
-  int loop_iter(int rx_index);
-
-  void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
-  void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
-
-  void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
-  // After calling this method, the injected packets will use a different radiotap header
-  // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
-  void threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
  private:
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
@@ -132,7 +117,6 @@ class TxRxInstance {
   std::vector<PcapTxRx> m_pcap_handles;
   // temporary
   std::mutex m_tx_mutex;
- private:
   bool keep_receiving= true;
   int m_n_receiver_errors=0;
   std::unique_ptr<std::thread> m_receive_thread;
@@ -142,7 +126,6 @@ class TxRxInstance {
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
- private:
   // Receiving packet statistics
   struct RxPacketStatsPerCard{
     // total number of received packets (can come from non-wb, too)
@@ -152,6 +135,17 @@ class TxRxInstance {
   };
   std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
   std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
+ private:
+  void announce_session_key_if_needed();
+  void send_session_key();;
+  void loop_receive_packets();
+  int loop_iter(int rx_index);
+  void on_new_packet(uint8_t wlan_idx, const pcap_pkthdr &hdr, const uint8_t *pkt);
+  void process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,size_t pkt_payload_size);
+  void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
+  // After calling this method, the injected packets will use a different radiotap header
+  // I'd like to use an atomic instead of mutex, but unfortunately some compilers don't eat atomic struct
+  void threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams& params);
 };
 
 #endif  // WIFIBROADCAST_TXRXINSTANCE_H
