@@ -20,6 +20,7 @@ class WBReceiver2 {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;
   struct Options {
+    // needs to match the radio port of the corresponding tx
     uint8_t radio_port = 0;
     // enable / disable fec
     bool enable_fec= true;

@@ -20,9 +20,8 @@
 class WBTransmitter2 {
  public:
   struct Options {
-    // the radio port is what is used as an index to multiplex multiple streams (telemetry,video,...)
-    // into the one wfb stream
-    uint8_t radio_port = 1;
+    // needs to match the radio port of the corresponding tx
+    uint8_t radio_port = 0;
     // size of packet data queue
     int packet_data_queue_size=64;
     // size of block / frame data queue

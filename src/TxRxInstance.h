@@ -53,7 +53,9 @@ class TxRxInstance {
    */
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len)> SPECIFIC_OUTPUT_DATA_CB;
+  // register callback that is called each time a valid packet is received (any multiplexed stream)
   void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
+  // register callback that is called each time a valid packet is received for a specific stream
   void rx_register_specific_cb(uint8_t radioPort,SPECIFIC_OUTPUT_DATA_CB cb);
 
   /**
