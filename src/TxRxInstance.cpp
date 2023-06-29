@@ -172,7 +172,7 @@ int TxRxInstance::loop_iter(int rx_index) {
 void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
   m_rx_packet_stats[wlan_idx].count_received_packets++;
-  const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, true);
+  const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
   const uint8_t *pkt_payload = parsedPacket->payload;
   const size_t pkt_payload_size = parsedPacket->payloadSize;
 
