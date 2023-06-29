@@ -54,7 +54,7 @@ class TxRxInstance {
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len)> SPECIFIC_OUTPUT_DATA_CB;
   void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
-  void rx_register_specific_cb(const uint8_t radioPort,SPECIFIC_OUTPUT_DATA_CB cb);
+  void rx_register_specific_cb(uint8_t radioPort,SPECIFIC_OUTPUT_DATA_CB cb);
 
   /**
    * Receiving packets happens in the background in another thread.
