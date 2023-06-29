@@ -260,6 +260,7 @@ void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t r
     m_output_cb(nonce,wlan_index,radioPort,data,data_len);
     forwarded= true;
   }
+  // find a consumer for data of this radio port
   auto specific=m_specific_callbacks.find(radioPort);
   if(specific!=m_specific_callbacks.end()){
     SPECIFIC_OUTPUT_DATA_CB specific_cb=specific->second;
