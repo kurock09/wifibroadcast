@@ -31,8 +31,7 @@ class TxRxInstance {
   struct Options{
     // file for encryptor
     // make optional for ease of use - with no keypair given the default "seed" is used
-    std::optional<std::string> encrypt_key = std::nullopt;
-    std::optional<std::string> decrypt_key = std::nullopt;
+    std::optional<std::string> encryption_key = std::nullopt;
     // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
     bool rtl8812au_rssi_fixup=false;
   };
