@@ -328,15 +328,16 @@ void WBTxRx::announce_session_key_if_needed() {
 }
 
 void WBTxRx::send_session_key() {
-  wifibroadcast::pcap_helper::AbstractWBPacket tmp{(uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES};
-  Ieee80211Header tmp_hdr=mIeee80211Header;
-  tmp_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
-  auto session_key_packet=wifibroadcast::pcap_helper::createRadiotapPacket(m_radiotap_header,tmp_hdr,tmp);
+  RadiotapHeader tmp_radiotap_header=m_radiotap_header;
+  Ieee80211Header tmp_ieee_hdr=mIeee80211Header;
+  tmp_ieee_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
+  auto packet=wifibroadcast::pcap_helper::create_radiotap_wifi_packet(tmp_radiotap_header,tmp_ieee_hdr,
+                                                          (uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES);
   pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
-  const auto len_injected=pcap_inject(tx, session_key_packet.data(),session_key_packet.size());
-  if (len_injected != (int) session_key_packet.size()) {
+  const auto len_injected=pcap_inject(tx,packet.data(),packet.size());
+  if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
-    wifibroadcast::log::get_default()->warn("pcap -unable to inject session key packet size:{} ret:{} err:{}",session_key_packet.size(),len_injected, pcap_geterr(tx));
+    wifibroadcast::log::get_default()->warn("pcap -unable to inject session key packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
   }
 }
 

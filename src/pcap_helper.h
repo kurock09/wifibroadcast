@@ -268,56 +268,23 @@ static std::optional<ParsedRxPcapPacket> processReceivedPcapPacket(const pcap_pk
   return ParsedRxPcapPacket{allAntennaValues, ieee80211Header, payload, payloadSize, frameFailedFcsCheck,mcs_index,channel_width};
 }
 
-// TODO remove me
-class AbstractWBPacket {
- public:
-  // constructor for packet without header (or the header is already merged into payload)
-  AbstractWBPacket(const uint8_t *payload, const std::size_t payloadSize) :
-                                                                            customHeader(nullptr), customHeaderSize(0), payload(payload), payloadSize(payloadSize) {};
-  // constructor for packet with header and payload at different memory locations
-  AbstractWBPacket(const uint8_t *customHeader,
-                   const std::size_t customHeaderSize,
-                   const uint8_t *payload,
-                   const std::size_t payloadSize) :
-                                                    customHeader(customHeader), customHeaderSize(customHeaderSize), payload(payload), payloadSize(payloadSize) {};
-  AbstractWBPacket(AbstractWBPacket &) = delete;
-  AbstractWBPacket(AbstractWBPacket &&) = delete;
- public:
-  // can be nullptr if size 0
-  const uint8_t *customHeader;
-  // can be 0 for special use cases
-  const std::size_t customHeaderSize;
-  // can be nullptr if size 0
-  const uint8_t *payload;
-  // can be 0 for special use cases
-  const std::size_t payloadSize;
-};
-
 // [RadiotapHeader | Ieee80211Header | customHeader (if not size 0) | payload (if not size 0)]
-static std::vector<uint8_t>
-createRadiotapPacket(const RadiotapHeader &radiotapHeader,
-                     const Ieee80211Header &ieee80211Header,
-                     const AbstractWBPacket &abstractWbPacket) {
-  const auto customHeaderAndPayloadSize = abstractWbPacket.customHeaderSize + abstractWbPacket.payloadSize;
-  std::vector<uint8_t> packet(radiotapHeader.getSize() + ieee80211Header.getSize() + customHeaderAndPayloadSize);
+static std::vector<uint8_t> create_radiotap_wifi_packet(const RadiotapHeader& radiotapHeader,
+                                                        const Ieee80211Header &ieee80211Header,
+                                                        const uint8_t* data,int data_len){
+  std::vector<uint8_t> packet(radiotapHeader.getSize() + ieee80211Header.getSize() + data_len);
   uint8_t *p = packet.data();
-  // radiotap wbDataHeader
+  // radiotap header
   memcpy(p, radiotapHeader.getData(), radiotapHeader.getSize());
   p += radiotapHeader.getSize();
   // ieee80211 wbDataHeader
   memcpy(p, ieee80211Header.getData(), ieee80211Header.getSize());
   p += ieee80211Header.getSize();
-  if (abstractWbPacket.customHeaderSize > 0) {
-    // customHeader
-    memcpy(p, abstractWbPacket.customHeader, abstractWbPacket.customHeaderSize);
-    p += abstractWbPacket.customHeaderSize;
-  }
-  if (abstractWbPacket.payloadSize > 0) {
-    // payload
-    memcpy(p, abstractWbPacket.payload, abstractWbPacket.payloadSize);
-  }
+  memcpy(p, data, data_len);
+  p += data_len;
   return packet;
 }
+
 }
 
 #endif  // WIFIBROADCAST_SRC_PCAP_HELPER_H_
