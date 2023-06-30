@@ -65,15 +65,16 @@ bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> pa
 bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
   assert(options.enable_fec);
   for(const auto& fragment:fragments){
-    /*if (fragment->empty() || fragment->size() > FEC_MAX_PAYLOAD_SIZE) {
+    if (fragment->empty() || fragment->size() > bla::FEC_MAX_PAYLOAD_SIZE) {
       m_console->warn("Fed fragment with incompatible size:{}",fragment->size());
       return false;
-    }*/
+    }
     m_count_bytes_data_provided +=fragment->size();
   }
   auto item=std::make_shared<EnqueuedBlock>();
   item->fragments=fragments;
   item->max_block_size=max_block_size;
+  item->fec_overhead_perc=fec_overhead_perc;
   const bool res= m_block_queue->try_enqueue(item);
   if(!res){
     m_n_dropped_packets+=fragments.size();
