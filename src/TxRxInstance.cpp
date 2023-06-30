@@ -109,11 +109,6 @@ void TxRxInstance::rx_register_specific_cb(const uint8_t radioPort,TxRxInstance:
   m_specific_callbacks[radioPort]=std::move(cb);
 }
 
-void TxRxInstance::set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx) {
-  m_advanced_debugging_tx = enable_debug_tx;
-  m_advanced_debugging_rx =enable_debug_rx;
-}
-
 void TxRxInstance::loop_receive_packets() {
   while (keep_receiving){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
@@ -121,12 +116,14 @@ void TxRxInstance::loop_receive_packets() {
 
     if (rc < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
-      wifibroadcast::log::get_default()->warn("Poll error: {}", strerror(errno));
+      m_console->warn("Poll error: {}", strerror(errno));
     }
 
     if (rc == 0) {
       // timeout expired
-      m_console->debug("Timeout");
+      //if(m_options.advanced_debugging_rx){
+        m_console->debug("Timeout - no packet after 1 second");
+      //}
       continue;
     }
     // TODO Optimization: If rc>1 we have data on more than one wifi card. It would be better to alternating process a couple of packets from card 1, then card 2 or similar
@@ -183,7 +180,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
   const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
   if (parsedPacket == std::nullopt) {
-    if(m_advanced_debugging_rx){
+    if(m_options.advanced_debugging_rx){
       m_console->warn("Discarding packet due to pcap parsing error!");
     }
     return;
@@ -195,13 +192,13 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   m_rx_packet_stats[wlan_idx].count_p_any++;
 
   if (parsedPacket->frameFailedFCSCheck) {
-    if(m_advanced_debugging_rx){
+    if(m_options.advanced_debugging_rx){
       m_console->debug("Discarding packet due to bad FCS!");
     }
     return;
   }
   if (!parsedPacket->ieee80211Header->isDataFrame()) {
-    if(m_advanced_debugging_rx){
+    if(m_options.advanced_debugging_rx){
       // we only process data frames
       m_console->debug("Got packet that is not a data packet {}",(int) parsedPacket->ieee80211Header->getFrameControl());
     }
@@ -220,7 +217,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   m_console->debug("Got packet raio port {}",radio_port);
   if(radio_port==RADIO_PORT_SESSION_KEY_PACKETS){
     if (pkt_payload_size != WBSessionKeyPacket::SIZE_BYTES) {
-      if(m_advanced_debugging_rx){
+      if(m_options.advanced_debugging_rx){
         m_console->warn("Cannot be session key packet - size mismatch {}",pkt_payload_size);
       }
       return;
@@ -234,7 +231,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     // the payload needs to include at least the nonce, the encryption suffix and 1 byte of actual payload
     static constexpr auto MIN_PACKET_PAYLOAD_SIZE=sizeof(uint64_t)+crypto_aead_chacha20poly1305_ABYTES+1;
     if(pkt_payload_size<MIN_PACKET_PAYLOAD_SIZE){
-      if(m_advanced_debugging_rx){
+      if(m_options.advanced_debugging_rx){
         m_console->debug("Got packet with payload of {} (min:{})",pkt_payload_size,MIN_PACKET_PAYLOAD_SIZE);
       }
       return ;

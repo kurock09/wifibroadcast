@@ -39,6 +39,8 @@ class TxRxInstance {
     bool rtl8812au_rssi_fixup=false;
     // TODO
     bool set_direction= true;
+    bool advanced_debugging_tx = false;
+    bool advanced_debugging_rx = false;
   };
   explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1);
   TxRxInstance(const TxRxInstance &) = delete;
@@ -74,11 +76,6 @@ class TxRxInstance {
    */
   void start_receiving();
   void stop_receiving();
-
-  /**
-   * Really verbose logs (warning: Spams console)
-   */
-   void set_extended_debugging(bool enable_debug_tx,bool enable_debug_rx);
 
    // These are for updating injection parameters at run time. They will be applied on the next injected packet.
    // They are generally thread-safe. See RadiotapHeader for more information on what these parameters do.
@@ -134,8 +131,6 @@ class TxRxInstance {
   RadiotapHeader::UserSelectableParams m_radioTapHeaderParams{};
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
-  bool m_advanced_debugging_rx = false;
-  bool m_advanced_debugging_tx = false;
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
   int m_highest_rssi_index=0;
