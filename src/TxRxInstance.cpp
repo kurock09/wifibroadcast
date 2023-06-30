@@ -274,6 +274,9 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
   const auto res=m_decryptor->decrypt2(nonce,encrypted_data_with_suffix,encrypted_data_with_suffix_len,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
+    if(m_options.log_all_received_validated_packets){
+      m_console->debug("Got valid packet {} {} {}",wlan_idx,nonce,decrypted->size());
+    }
     on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
     if(wlan_idx==0){
       uint16_t tmp=nonce;
