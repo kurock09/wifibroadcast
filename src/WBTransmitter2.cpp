@@ -49,7 +49,6 @@ WBTransmitter2::~WBTransmitter2() {
 
 bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
   assert(!options.enable_fec);
-  //m_count_bytes_data_provided +=packet->size();
   auto item=std::make_shared<EnqueuedPacket>();
   item->data=std::move(packet);
   const bool res= m_packet_queue->try_enqueue(item);
@@ -69,7 +68,6 @@ bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<u
       m_console->warn("Fed fragment with incompatible size:{}",fragment->size());
       return false;
     }
-    m_count_bytes_data_provided +=fragment->size();
   }
   auto item=std::make_shared<EnqueuedBlock>();
   item->fragments=fragments;
@@ -94,18 +92,18 @@ FECTxStats WBTransmitter2::get_latest_fec_stats() {
 
 WBTxStats WBTransmitter2::get_latest_stats() {
   WBTxStats ret{};
-  /*ret.n_injected_packets= m_n_injected_packets;
+  ret.n_provided_bytes=m_count_bytes_data_provided;
+  ret.n_provided_packets=m_n_input_packets;
+  ret.n_injected_packets= m_n_injected_packets;
   ret.n_injected_bytes=static_cast<int64_t>(m_count_bytes_data_injected);
-  ret.current_injected_bits_per_second=bitrate_calculator_injected_bytes.get_last_or_recalculate(
+  ret.current_injected_bits_per_second=m_bitrate_calculator_injected_bytes.get_last_or_recalculate(
       m_count_bytes_data_injected,std::chrono::seconds(2));
   ret.current_provided_bits_per_second=
       m_bitrate_calculator_data_provided.get_last_or_recalculate(
           m_count_bytes_data_provided,std::chrono::seconds(2));
-  ret.count_tx_injections_error_hint= m_count_tx_injections_error_hint;
   ret.n_dropped_packets=m_n_dropped_packets;
-  ret.current_injected_packets_per_second=
-      m_packets_per_second_calculator.get_last_or_recalculate(
-          m_n_injected_packets,std::chrono::seconds(2));*/
+  ret.current_injected_packets_per_second=m_packets_per_second_calculator.get_last_or_recalculate(
+          m_n_injected_packets,std::chrono::seconds(2));
   return ret;
 }
 
@@ -146,6 +144,8 @@ void WBTransmitter2::loop_process_data() {
 
 void WBTransmitter2::process_enqueued_packet(const WBTransmitter2::EnqueuedPacket& packet) {
   m_fec_disabled_encoder->encodePacket(packet.data->data(),packet.data->size());
+  m_n_input_packets++;
+  m_count_bytes_data_provided+=packet.data->size();
 }
 
 void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock& block) {
@@ -154,8 +154,14 @@ void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock&
     const auto n_secondary_f=bla::calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
     m_fec_encoder->encode_block(x_block,n_secondary_f);
   }
+  m_n_input_packets+=block.fragments.size();
+  for(const auto& fragment:block.fragments){
+    m_count_bytes_data_provided +=fragment->size();
+  }
 }
 
 void WBTransmitter2::send_packet(const uint8_t* packet, int packet_len) {
   m_txrx->tx_inject_packet(options.radio_port,packet,packet_len);
+  m_n_injected_packets++;
+  m_count_bytes_data_injected+=packet_len;
 }

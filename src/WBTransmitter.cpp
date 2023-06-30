@@ -269,7 +269,6 @@ WBTxStats WBTransmitter::get_latest_stats() {
   ret.current_provided_bits_per_second=
       m_bitrate_calculator_data_provided.get_last_or_recalculate(
           m_count_bytes_data_provided,std::chrono::seconds(2));
-  ret.count_tx_injections_error_hint= m_count_tx_injections_error_hint;
   ret.n_dropped_packets=m_n_dropped_packets;
   ret.current_injected_packets_per_second=
       m_packets_per_second_calculator.get_last_or_recalculate(

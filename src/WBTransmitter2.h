@@ -84,11 +84,21 @@ class WBTransmitter2 {
   std::unique_ptr<std::thread> m_process_data_thread;
   bool m_process_data_thread_run=true;
   uint64_t m_n_dropped_packets=0;
-  // count of bytes we got passed (aka for example, what the video encoder produced - does not include FEC)
-  uint64_t m_count_bytes_data_provided =0;
-  BitrateCalculator m_bitrate_calculator_data_provided{};
   // Time fragments / blocks spend in the non-blocking atomic queue.
   AvgCalculator m_queue_time_calculator;
+  //
+  // n of packets fed to the instance
+  int64_t m_n_input_packets = 0;
+  // count of bytes we got passed (aka for example, what the video encoder produced - does not include FEC)
+  uint64_t m_count_bytes_data_provided =0;
+  // n of actually injected packets
+  int64_t m_n_injected_packets = 0;
+  BitrateCalculator m_bitrate_calculator_data_provided{};
+  // count of bytes we injected into the wifi card
+  uint64_t m_count_bytes_data_injected =0;
+  BitrateCalculator m_bitrate_calculator_injected_bytes{};
+  PacketsPerSecondCalculator m_packets_per_second_calculator{};
+  //
   std::shared_ptr<spdlog::logger> m_console;
   void loop_process_data();
   void process_enqueued_packet(const EnqueuedPacket& packet);
