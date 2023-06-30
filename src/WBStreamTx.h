@@ -78,6 +78,7 @@ class WBStreamTx {
  private:
   const Options options;
   std::shared_ptr<WBTxRx> m_txrx;
+  std::shared_ptr<spdlog::logger> m_console;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<FECEncoder> m_fec_encoder = nullptr;
   std::unique_ptr<FECDisabledEncoder2> m_fec_disabled_encoder = nullptr;
@@ -113,8 +114,6 @@ class WBStreamTx {
   uint64_t m_count_bytes_data_injected =0;
   BitrateCalculator m_bitrate_calculator_injected_bytes{};
   PacketsPerSecondCalculator m_packets_per_second_calculator{};
-  //
-  std::shared_ptr<spdlog::logger> m_console;
   void loop_process_data();
   void process_enqueued_packet(const EnqueuedPacket& packet);
   void process_enqueued_block(const EnqueuedBlock& block);
