@@ -58,5 +58,7 @@ void WBReceiver2::on_decoded_packet(const uint8_t *data, int data_len) {
 }
 
 WBReceiverStats WBReceiver2::get_latest_stats() {
-  return WBReceiverStats();
+  WBReceiverStats ret{};
+  ret.stats_per_card.resize(10);
+  return ret;
 }
