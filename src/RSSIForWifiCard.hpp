@@ -2,8 +2,8 @@
 // Created by consti10 on 30.06.23.
 //
 
-#ifndef WIFIBROADCAST_RSSIFORWIFICARD_H
-#define WIFIBROADCAST_RSSIFORWIFICARD_H
+#ifndef WIFIBROADCAST_RSSIFORWIFICARD_HPP
+#define WIFIBROADCAST_RSSIFORWIFICARD_HPP
 
 // Stores the min, max and average of the rssi values reported for this wifi card
 // Doesn't differentiate from which antenna the rssi value came
@@ -47,4 +47,4 @@ static std::ostream& operator<<(std::ostream& strm, const RSSIForWifiCard& obj){
   return strm;
 }
 
-#endif  // WIFIBROADCAST_RSSIFORWIFICARD_H
+#endif  // WIFIBROADCAST_RSSIFORWIFICARD_HPP

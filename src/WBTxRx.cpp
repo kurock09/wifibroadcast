@@ -2,10 +2,11 @@
 // Created by consti10 on 27.06.23.
 //
 
+#include "WBTxRx.h"
+
 #include <utility>
 
-#include "WBTxRx.h"
-#include "pcap_helper.h"
+#include "pcap_helper.hpp"
 
 WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
     : m_options(options1),

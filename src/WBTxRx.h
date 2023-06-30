@@ -11,7 +11,7 @@
 #include <map>
 
 #include "Encryption.hpp"
-#include "RSSIForWifiCard.h"
+#include "RSSIForWifiCard.hpp"
 #include "RadiotapHeader.hpp"
 #include "SeqNrHelper.hpp"
 #include "wifibroadcast.hpp"
