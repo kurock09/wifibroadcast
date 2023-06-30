@@ -377,7 +377,8 @@ void TxRxInstance::tx_update_ldpc(bool ldpc) {
 
 void TxRxInstance::tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams &params) {
   auto newRadioTapHeader=RadiotapHeader{params};
-  m_radiotap_header =newRadioTapHeader;
+  std::lock_guard<std::mutex> guard(m_tx_mutex);
+  m_radiotap_header = newRadioTapHeader;
 }
 
 TxRxInstance::TxStats TxRxInstance::get_tx_stats() {
