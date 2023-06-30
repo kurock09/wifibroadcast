@@ -30,6 +30,7 @@ int main(int argc, char *const *argv) {
   options_txrx.rtl8812au_rssi_fixup= true;
   //options_txrx.set_direction= false;
   options_txrx.set_direction= true;
+  options_txrx.log_all_received_validated_packets= true;
 
   std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards,options_txrx);
 

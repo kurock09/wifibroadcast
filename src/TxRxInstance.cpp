@@ -274,7 +274,7 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     if(m_options.log_all_received_validated_packets){
-      m_console->debug("Got valid packet {} {} {}",wlan_idx,nonce,decrypted->size());
+      m_console->debug("Got valid packet nonce:{} wlan_idx:{} radio_port:{} size:{}",nonce,wlan_idx,radio_port,pkt_payload_size);
     }
     on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
     if(wlan_idx==0){
@@ -302,9 +302,9 @@ void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t r
     specific_cb(nonce,wlan_index,data,data_len);
     forwarded= true;
   }
-  if(!forwarded){
+  /*if(!forwarded){
     m_console->debug("Got valid packet nonce:{} wlan_idx:{} radio_port:{} size:{}",nonce,wlan_index,radioPort,data_len);
-  }
+  }*/
 }
 
 void TxRxInstance::start_receiving() {
