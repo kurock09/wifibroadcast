@@ -9,8 +9,22 @@
 #include "../src/wifibroadcast-spdlog.h"
 
 int main(int argc, char *const *argv) {
+  std::string card="wlxac9e17596103";
+  int opt;
+  while ((opt = getopt(argc, argv, "w:")) != -1) {
+    switch (opt) {
+      case 'w':
+        card = optarg;
+        break;
+      default: /* '?' */
+      show_usage:
+        fprintf(stderr,
+                "Local receiver: %s [-K rx_key] [-c client_addr] [-u udp_client_port] [-r radio_port] interface1 [interface2] ...\n",
+                argv[0]);
+        exit(1);
+    }
+  }
 
-  auto card="wlxac9e17596103";
   std::vector<std::string> cards{card};
   TxRxInstance::Options options_txrx{};
   options_txrx.rtl8812au_rssi_fixup= true;
