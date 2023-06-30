@@ -2,8 +2,8 @@
 // Created by consti10 on 28.06.23.
 //
 
-#ifndef WIFIBROADCAST_WBTRANSMITTER2_H
-#define WIFIBROADCAST_WBTRANSMITTER2_H
+#ifndef WIFIBROADCAST_WBSTREAMTX_H
+#define WIFIBROADCAST_WBSTREAMTX_H
 
 #include <queue>
 #include <thread>
@@ -16,7 +16,7 @@
 #include "TimeHelper.hpp"
 #include "WBTxRx.h"
 
-class WBTransmitter2 {
+class WBStreamTx {
  public:
   struct Options {
     // needs to match the radio port of the corresponding tx
@@ -34,10 +34,10 @@ class WBTransmitter2 {
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
   };
-  WBTransmitter2(std::shared_ptr<WBTxRx> txrx,Options options);
-  WBTransmitter2(const WBTransmitter2 &) = delete;
-  WBTransmitter2 &operator=(const WBTransmitter2 &) = delete;
-  ~WBTransmitter2();
+  WBStreamTx(std::shared_ptr<WBTxRx> txrx,Options options);
+  WBStreamTx(const WBStreamTx&) = delete;
+  WBStreamTx&operator=(const WBStreamTx&) = delete;
+  ~WBStreamTx();
   /**
    * Enqueue a packet to be processed. FEC needs to be disabled in this mode.
    * Guaranteed to return immediately.
@@ -122,4 +122,4 @@ class WBTransmitter2 {
   void send_packet(const uint8_t* packet,int packet_len);
 };
 
-#endif  // WIFIBROADCAST_WBTRANSMITTER2_H
+#endif  // WIFIBROADCAST_WBSTREAMTX_H

@@ -2,8 +2,8 @@
 // Created by consti10 on 27.06.23.
 //
 
-#include "../src/WBReceiver2.h"
-#include "../src/WBTransmitter2.h"
+#include "../src/WBStreamRx.h"
+#include "../src/WBStreamTx.h"
 #include "../src/WBTxRx.h"
 #include "../src/wifibroadcast-spdlog.h"
 #include "RandomBufferPot.hpp"
@@ -35,15 +35,15 @@ int main(int argc, char *const *argv) {
   std::shared_ptr<WBTxRx> txrx=std::make_shared<WBTxRx>(cards,options_txrx);
 
   const bool enable_fec= true;
-  WBTransmitter2::Options options_tx{};
+  WBStreamTx::Options options_tx{};
   options_tx.radio_port=10;
   options_tx.enable_fec= enable_fec;
-  std::unique_ptr<WBTransmitter2> wb_tx=std::make_unique<WBTransmitter2>(txrx,options_tx);
+  std::unique_ptr<WBStreamTx> wb_tx=std::make_unique<WBStreamTx>(txrx,options_tx);
 
-  WBReceiver2::Options options_rx{};
+  WBStreamRx::Options options_rx{};
   options_rx.radio_port=10;
   options_rx.enable_fec= enable_fec;
-  std::unique_ptr<WBReceiver2> wb_rx=std::make_unique<WBReceiver2>(txrx,options_rx);
+  std::unique_ptr<WBStreamRx> wb_rx=std::make_unique<WBStreamRx>(txrx,options_rx);
   auto console=wifibroadcast::log::create_or_get("out_cb");
   auto cb=[&console](const uint8_t *payload, const std::size_t payloadSize){
       console->debug("Got data {}",payloadSize);

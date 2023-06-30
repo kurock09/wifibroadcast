@@ -2,14 +2,14 @@
 // Created by consti10 on 28.06.23.
 //
 
-#include "WBTransmitter2.h"
+#include "WBStreamTx.h"
 
 #include <utility>
 
 #include "BlockSizeHelper.hpp"
 #include "SchedulingHelper.hpp"
 
-WBTransmitter2::WBTransmitter2(std::shared_ptr<WBTxRx> txrx,Options options1)
+WBStreamTx::WBStreamTx(std::shared_ptr<WBTxRx> txrx,Options options1)
     :options(options1),
       m_txrx(txrx)
 {
@@ -37,17 +37,17 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<WBTxRx> txrx,Options options1)
     m_fec_disabled_encoder->outputDataCallback=cb;
   }
   m_process_data_thread_run=true;
-  m_process_data_thread=std::make_unique<std::thread>(&WBTransmitter2::loop_process_data, this);
+  m_process_data_thread=std::make_unique<std::thread>(&WBStreamTx::loop_process_data, this);
 }
 
-WBTransmitter2::~WBTransmitter2() {
+WBStreamTx::~WBStreamTx() {
   m_process_data_thread_run= false;
   if(m_process_data_thread && m_process_data_thread->joinable()){
     m_process_data_thread->join();
   }
 }
 
-bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
+bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
   assert(!options.enable_fec);
   auto item=std::make_shared<EnqueuedPacket>();
   item->data=std::move(packet);
@@ -61,7 +61,7 @@ bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> pa
   return res;
 }
 
-bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
+bool WBStreamTx::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
   assert(options.enable_fec);
   for(const auto& fragment:fragments){
     if (fragment->empty() || fragment->size() > FEC_MAX_PAYLOAD_SIZE) {
@@ -81,8 +81,8 @@ bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<u
   return res;
 }
 
-WBTransmitter2::FECStats WBTransmitter2::get_latest_fec_stats() {
-  WBTransmitter2::FECStats ret{};
+WBStreamTx::FECStats WBStreamTx::get_latest_fec_stats() {
+  WBStreamTx::FECStats ret{};
   if(m_fec_encoder){
     ret.curr_fec_encode_time=m_fec_encoder->m_curr_fec_block_encode_time;
     ret.curr_fec_block_length=m_fec_encoder->m_curr_fec_block_sizes;
@@ -90,8 +90,8 @@ WBTransmitter2::FECStats WBTransmitter2::get_latest_fec_stats() {
   return ret;
 }
 
-WBTransmitter2::Statistics WBTransmitter2::get_latest_stats() {
-  WBTransmitter2::Statistics ret{};
+WBStreamTx::Statistics WBStreamTx::get_latest_stats() {
+  WBStreamTx::Statistics ret{};
   ret.n_provided_bytes=m_count_bytes_data_provided;
   ret.n_provided_packets=m_n_input_packets;
   ret.n_injected_packets= m_n_injected_packets;
@@ -108,7 +108,7 @@ WBTransmitter2::Statistics WBTransmitter2::get_latest_stats() {
 }
 
 
-void WBTransmitter2::loop_process_data() {
+void WBStreamTx::loop_process_data() {
   SchedulingHelper::setThreadParamsMaxRealtime();
   static constexpr std::int64_t timeout_usecs=100*1000;
   if(options.enable_fec){
@@ -142,13 +142,13 @@ void WBTransmitter2::loop_process_data() {
   }
 }
 
-void WBTransmitter2::process_enqueued_packet(const WBTransmitter2::EnqueuedPacket& packet) {
+void WBStreamTx::process_enqueued_packet(const WBStreamTx::EnqueuedPacket& packet) {
   m_fec_disabled_encoder->encodePacket(packet.data->data(),packet.data->size());
   m_n_input_packets++;
   m_count_bytes_data_provided+=packet.data->size();
 }
 
-void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock& block) {
+void WBStreamTx::process_enqueued_block(const WBStreamTx::EnqueuedBlock& block) {
   auto blocks=blocksize::split_frame_if_needed(block.fragments,block.max_block_size);
   for(auto& x_block :blocks){
     const auto n_secondary_f=calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
@@ -160,7 +160,7 @@ void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock&
   }
 }
 
-void WBTransmitter2::send_packet(const uint8_t* packet, int packet_len) {
+void WBStreamTx::send_packet(const uint8_t* packet, int packet_len) {
   m_txrx->tx_inject_packet(options.radio_port,packet,packet_len);
   m_n_injected_packets++;
   m_count_bytes_data_injected+=packet_len;

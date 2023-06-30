@@ -2,8 +2,8 @@
 // Created by consti10 on 29.06.23.
 //
 
-#ifndef WIFIBROADCAST_WBRECEIVER2_H
-#define WIFIBROADCAST_WBRECEIVER2_H
+#ifndef WIFIBROADCAST_WBSTREAMRX_H
+#define WIFIBROADCAST_WBSTREAMRX_H
 
 #include "FECDisabled2.hpp"
 #include "FECEnabled2.h"
@@ -15,7 +15,7 @@
 #include "wifibroadcast-spdlog.h"
 #include "wifibroadcast.hpp"
 
-class WBReceiver2 {
+class WBStreamRx {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;
   struct Options {
@@ -32,10 +32,10 @@ class WBReceiver2 {
     // e.g. the thread inside WBTxRx
     //bool enable_threading= true;
   };
-  WBReceiver2(std::shared_ptr<WBTxRx> txrx,Options options1);
-  WBReceiver2(const WBReceiver2 &) = delete;
-  WBReceiver2 &operator=(const WBReceiver2 &) = delete;
-  void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
+  WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1);
+  WBStreamRx(const WBStreamRx &) = delete;
+  WBStreamRx &operator=(const WBStreamRx &) = delete;
+  void set_callback(WBStreamRx::OUTPUT_DATA_CALLBACK output_data_callback);
   struct Statistics{
     int64_t n_input_packets=0;
     int64_t n_input_bytes=0;
@@ -63,7 +63,7 @@ class WBReceiver2 {
   std::shared_ptr<WBTxRx> m_txrx;
   std::shared_ptr<spdlog::logger> m_console;
   // Callback that is called with the decoded data
-  WBReceiver2::OUTPUT_DATA_CALLBACK m_out_cb= nullptr;
+  WBStreamRx::OUTPUT_DATA_CALLBACK m_out_cb= nullptr;
   int64_t m_n_input_packets=0;
   int64_t m_n_input_bytes=0;
   BitrateCalculator m_input_bitrate_calculator{};
@@ -78,4 +78,4 @@ class WBReceiver2 {
   void on_decoded_packet(const uint8_t* data,int data_len);
 };
 
-#endif  // WIFIBROADCAST_WBRECEIVER2_H
+#endif  // WIFIBROADCAST_WBSTREAMRX_H
