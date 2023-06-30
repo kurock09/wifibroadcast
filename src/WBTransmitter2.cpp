@@ -81,8 +81,8 @@ bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<u
   return res;
 }
 
-FECTxStats WBTransmitter2::get_latest_fec_stats() {
-  FECTxStats ret{};
+WBTransmitter2::FECStats WBTransmitter2::get_latest_fec_stats() {
+  WBTransmitter2::FECStats ret{};
   if(m_fec_encoder){
     ret.curr_fec_encode_time=m_fec_encoder->m_curr_fec_block_encode_time;
     ret.curr_fec_block_length=m_fec_encoder->m_curr_fec_block_sizes;
@@ -90,8 +90,8 @@ FECTxStats WBTransmitter2::get_latest_fec_stats() {
   return ret;
 }
 
-WBTxStats WBTransmitter2::get_latest_stats() {
-  WBTxStats ret{};
+WBTransmitter2::Statistics WBTransmitter2::get_latest_stats() {
+  WBTransmitter2::Statistics ret{};
   ret.n_provided_bytes=m_count_bytes_data_provided;
   ret.n_provided_packets=m_n_input_packets;
   ret.n_injected_packets= m_n_injected_packets;
