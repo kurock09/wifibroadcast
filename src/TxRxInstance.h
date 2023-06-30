@@ -87,14 +87,8 @@ class TxRxInstance {
    struct TxStats{
      int64_t n_injected_packets;
      int64_t n_injected_bytes;
-     /*
-     // calculated in 1 second intervals
-     uint64_t current_bits_per_second;
-     // Other than bits per second, packets per second is also an important metric -
-     // Sending a lot of small packets for example should be avoided)
-     uint64_t current_packets_per_second;*/
      // tx errors, first sign the tx can't keep up with the provided bitrate
-     uint64_t count_tx_injections_error_hint;
+     int32_t count_tx_injections_error_hint;
    };
    struct RxStats{
      // Total count of received packets - can be from another wb tx, but also from someone else using wifi
@@ -111,6 +105,7 @@ class TxRxInstance {
      int64_t count_p_any=0;
      int64_t count_p_valid=0;
    };
+   TxStats get_tx_stats();
    RxStats get_rx_stats();
    RxStatsPerCard get_rx_stats_for_card(int card_index);
  private:
@@ -148,15 +143,13 @@ class TxRxInstance {
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
   RxStats m_rx_stats;
   TxStats m_tx_stats;
-  // Receiving packet statistics
-  struct RxPacketStatsPerCard{
-    // total number of received packets (can come from non-wb, too)
-    uint64_t count_received_packets=0;
-    // total number of successfully validated & decrypted packets
-    uint64_t count_valid_packets=0;
-    RSSIForWifiCard rssi_for_wifi_card{};
-  };
-  std::vector<RxPacketStatsPerCard> m_rx_packet_stats;
+  // a tx error is thrown if injecting the packet takes longer than MAX_SANE_INJECTION_TIME,
+  // which hints at a overflowing tx queue (unfortunately I don't know a way to directly get the tx queue yet)
+  // However, this hint can be misleading - for example, during testing (MCS set to 3) and with about 5MBit/s video after FEC
+  // I get about 5 tx error(s) per second with my atheros, but it works fine. This workaround also seems to not work at all
+  // with the RTL8812au.
+  static constexpr std::chrono::nanoseconds MAX_SANE_INJECTION_TIME=std::chrono::milliseconds(5);
+  std::vector<RxStatsPerCard> m_rx_packet_stats;
   std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)

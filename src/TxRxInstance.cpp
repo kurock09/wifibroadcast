@@ -82,10 +82,17 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
   // inject via pcap
   // we inject the packet on whatever card has the highest rx rssi right now
   pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
+  const auto before_injection = std::chrono::steady_clock::now();
   const auto len_injected=pcap_inject(tx, packet.data(), packet.size());
+  const auto delta_inject=std::chrono::steady_clock::now()-before_injection;
+  if(delta_inject>=MAX_SANE_INJECTION_TIME){
+    m_tx_stats.count_tx_injections_error_hint++;
+  }
   if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
     wifibroadcast::log::get_default()->warn("pcap -unable to inject packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
+  }else{
+    m_tx_stats.n_injected_bytes++;
   }
   announce_session_key_if_needed();
 }
@@ -171,7 +178,7 @@ int TxRxInstance::loop_iter(int rx_index) {
 
 void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
-  m_rx_packet_stats[wlan_idx].count_received_packets++;
+  m_rx_packet_stats[wlan_idx].count_p_any++;
   const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
   const uint8_t *pkt_payload = parsedPacket->payload;
   const size_t pkt_payload_size = parsedPacket->payloadSize;
@@ -237,7 +244,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       if(best_rssi.has_value()){
         rssi_for_this_card.addRSSI(best_rssi.value());
       }
-      this_wifi_card_stats.count_received_packets++;
+      this_wifi_card_stats.count_p_valid++;
       if(parsedPacket->mcs_index.has_value()){
         m_rx_stats.last_received_packet_mcs_index=parsedPacket->mcs_index.value();
       }
@@ -260,7 +267,7 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
-    m_rx_packet_stats[wlan_idx].count_valid_packets++;
+    m_rx_packet_stats[wlan_idx].count_p_valid++;
     if(wlan_idx==0){
       uint16_t tmp=nonce;
       m_seq_nr_helper.on_new_sequence_number(tmp);
@@ -366,10 +373,14 @@ void TxRxInstance::tx_threadsafe_update_radiotap_header(const RadiotapHeader::Us
   m_radiotap_header =newRadioTapHeader;
 }
 
+TxRxInstance::TxStats TxRxInstance::get_tx_stats() {
+    return m_tx_stats;
+}
+
 TxRxInstance::RxStats TxRxInstance::get_rx_stats() {
-  return TxRxInstance::RxStats();
+  return m_rx_stats;
 }
 
 TxRxInstance::RxStatsPerCard TxRxInstance::get_rx_stats_for_card(int card_index) {
-  return TxRxInstance::RxStatsPerCard();
+  return m_rx_packet_stats.at(card_index);
 }
