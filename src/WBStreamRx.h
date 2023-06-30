@@ -33,7 +33,7 @@ class WBStreamRx {
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
     // enable / disable multi threading (decouples the processing of data from the thread that provided the data,
     // e.g. the thread inside WBTxRx
-    bool enable_threading= true;
+    bool enable_threading= false;
     // only if threading is enabled
     int packet_queue_size=20;
   };
