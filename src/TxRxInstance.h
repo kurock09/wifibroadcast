@@ -92,6 +92,7 @@ class TxRxInstance {
    };
    struct RxStats{
      // Total count of received packets / bytes - can be from another wb tx, but also from someone else using wifi
+     // Usefully to reason about pollution, but this does not include non-wifi packets (e.g. bluetooth, dji)
      int64_t count_p_any=0;
      int64_t count_bytes_any=0;
      // Total count of valid received packets / bytes (decrypted)
