@@ -76,6 +76,15 @@ class FECEncoder {
   OUTPUT_DATA_CALLBACK outputDataCallback;
   explicit FECEncoder()=default;
   FECEncoder(const FECEncoder &other) = delete;
+ public:
+  /**
+   * Encodes a new block and forwards the packets for this block
+   * forwards data packets first, then generated fec packets
+   * (if needed) and forwards them after.
+   * @param data_packets the packets for this block
+   * @param n_secondary_fragments how many secondary fragments (FEC packets) should be created
+   */
+  void encode_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,int n_secondary_fragments);
   // Pre-allocated to have space for storing primary fragments (they are needed once the fec step needs to be performed)
   // and creating the wanted amount of secondary packets
   std::array<std::array<uint8_t, FEC_MAX_PACKET_SIZE>,MAX_TOTAL_FRAGMENTS_PER_BLOCK> m_block_buffer{};
@@ -84,82 +93,6 @@ class FECEncoder {
   MinMaxAvg<std::chrono::nanoseconds> m_curr_fec_block_encode_time{};
   BaseAvgCalculator<uint16_t> m_block_sizes{};
   MinMaxAvg<uint16_t> m_curr_fec_block_sizes{};
- public:
-  void encode_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,int n_secondary_fragments){
-    const auto n_primary_fragments=data_packets.size();
-    // nice to have statistic
-    m_block_sizes.add(n_primary_fragments);
-    if(m_block_sizes.get_delta_since_last_reset()>=std::chrono::seconds(1)){
-      //wifibroadcast::log::get_default()->debug("Block sizes: {}",m_block_sizes.getAvgReadable());
-      m_curr_fec_block_sizes=m_block_sizes.getMinMaxAvg();
-      m_block_sizes.reset();
-    }
-    FECPayloadHdr header{};
-    header.block_idx=m_curr_block_idx;
-    m_curr_block_idx++;
-    header.n_primary_fragments=n_primary_fragments;
-    // write and forward all the data packets first
-    // also calculate the size of the biggest data packet
-    size_t max_packet_size=0;
-    // Store a pointer where the FEC data begins for performing the FEC step later on
-    std::vector<const uint8_t *> primary_fragments_data_p;
-    for(int i=0;i<data_packets.size();i++){
-      const auto& data_fragment=data_packets[i];
-      //wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
-      assert(data_fragment->size()>0);
-      assert(data_fragment->size()<=FEC_MAX_PAYLOAD_SIZE);
-      header.fragment_idx=i;
-      header.data_size=data_fragment->size();
-      auto buffer_p=m_block_buffer[i].data();
-      // copy over the header
-      memcpy(buffer_p,(uint8_t*)&header,sizeof(FECPayloadHdr));
-      // write the actual data
-      memcpy(buffer_p + sizeof(FECPayloadHdr), data_fragment->data(),data_fragment->size());
-      // zero out the remaining bytes such that FEC always sees zeroes
-      // same is done on the rx. These zero bytes are never transmitted via wifi
-      const auto writtenDataSize = sizeof(FECPayloadHdr) + data_fragment->size();
-      memset(buffer_p + writtenDataSize, 0, FEC_MAX_PACKET_SIZE - writtenDataSize);
-      max_packet_size = std::max(max_packet_size, data_fragment->size());
-      // we can forward the data packet immediately via the callback
-      if(outputDataCallback){
-        outputDataCallback(buffer_p,writtenDataSize);
-      }
-      // NOTE: FECPayloadHdr::data_size needs to be included during the fec encode step
-      primary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
-    }
-    // then we create as many FEC packets as needed
-    if(n_secondary_fragments==0){
-      //wifibroadcast::log::get_default()->debug("No FEC step performed");
-      // no FEC step is actually performed, usefully for debugging / performance evaluation
-      return ;
-    }
-    const auto before=std::chrono::steady_clock::now();
-    // Now we perform the actual FEC encode step
-    std::vector<uint8_t*> secondary_fragments_data_p;
-    for(int i=0;i<n_secondary_fragments;i++){
-      auto fragment_index=i+n_primary_fragments;
-      auto buffer_p=m_block_buffer[fragment_index].data();
-      header.fragment_idx=fragment_index;
-      // copy over the header
-      memcpy(buffer_p,(uint8_t*)&header,sizeof(FECPayloadHdr));
-      // where the FEC packet correction data is written to
-      secondary_fragments_data_p.push_back(buffer_p+sizeof(FECPayloadHdr)-sizeof(uint16_t));
-    }
-    fec_encode2(max_packet_size+sizeof(uint16_t),primary_fragments_data_p,secondary_fragments_data_p);
-    m_fec_block_encode_time.add(std::chrono::steady_clock::now()-before);
-    if(m_fec_block_encode_time.get_delta_since_last_reset()>=std::chrono::seconds(1)){
-      //wifibroadcast::log::get_default()->debug("FEC encode time:{}",m_fec_block_encode_time.getAvgReadable());
-      m_curr_fec_block_encode_time=m_fec_block_encode_time.getMinMaxAvg();
-      m_fec_block_encode_time.reset();
-    }
-    // and forward all the FEC correction packets
-    for(int i=0;i<n_secondary_fragments;i++){
-      auto fragment_index=i+n_primary_fragments;
-      if(outputDataCallback){
-        outputDataCallback(m_block_buffer[fragment_index].data(),sizeof(FECPayloadHdr)+max_packet_size);
-      }
-    }
-  }
 };
 
 // This encapsulates everything you need when working on a single FEC block on the receiver
@@ -190,114 +123,28 @@ class RxBlock {
   ~RxBlock() = default;
  public:
   // returns true if this fragment has been already received
-  bool hasFragment(const FECPayloadHdr &header) {
-    assert(header.block_idx == blockIdx);
-    return fragment_map[header.fragment_idx] == AVAILABLE;
-  }
+  bool hasFragment(const FECPayloadHdr &header);
   // returns true if we are "done with this block" aka all data has been already forwarded
-  bool allPrimaryFragmentsHaveBeenForwarded() const {
-    if (m_n_primary_fragments_in_block == -1)return false;
-    return nAlreadyForwardedPrimaryFragments == m_n_primary_fragments_in_block;
-  }
+  bool allPrimaryFragmentsHaveBeenForwarded() const;
   // returns true if enough FEC secondary fragments are available to replace all missing primary fragments
-  bool allPrimaryFragmentsCanBeRecovered() const {
-    // return false if k is not known for this block yet (which means we didn't get a secondary fragment yet,
-    // since each secondary fragment contains k)
-    if (m_n_primary_fragments_in_block == -1)return false;
-    // ready for FEC step if we have as many secondary fragments as we are missing on primary fragments
-    if (m_n_available_primary_fragments + m_n_available_secondary_fragments >=
-        m_n_primary_fragments_in_block)return true;
-    return false;
-  }
-  // returns true if suddenly all primary fragments have become available
-  bool allPrimaryFragmentsAreAvailable() const {
-    if (m_n_primary_fragments_in_block == -1)return false;
-    return m_n_available_primary_fragments == m_n_primary_fragments_in_block;
-  }
+  bool allPrimaryFragmentsCanBeRecovered() const;
+  // returns true as soon as all primary fragments are available
+  bool allPrimaryFragmentsAreAvailable() const;
   // copy the fragment data and mark it as available
   // you should check if it is already available with hasFragment() to avoid storing a fragment multiple times
   // when using multiple RX cards
-  void addFragment(const uint8_t *data, const std::size_t dataLen) {
-    auto* hdr_p=(FECPayloadHdr*) data;
-    FECPayloadHdr& header=*hdr_p;
-    assert(!hasFragment(header));
-    assert(header.block_idx == blockIdx);
-    assert(fragment_map[header.fragment_idx] == UNAVAILABLE);
-    assert(header.fragment_idx < blockBuffer.size());
-    fragment_copy_payload(header.fragment_idx,data,dataLen);
-    // mark it as available
-    fragment_map[header.fragment_idx] = FragmentStatus::AVAILABLE;
-
-    // each fragment inside a block should report the same n of primary fragments
-    if(m_n_primary_fragments_in_block ==-1){
-      m_n_primary_fragments_in_block =header.n_primary_fragments;
-    }else{
-      assert(m_n_primary_fragments_in_block ==header.n_primary_fragments);
-    }
-    const bool is_primary_fragment=header.fragment_idx<header.n_primary_fragments;
-    if(is_primary_fragment){
-      m_n_available_primary_fragments++;
-    }else{
-      m_n_available_secondary_fragments++;
-      const auto payload_len_including_size=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
-      // all secondary fragments shall have the same size
-      if(m_size_of_secondary_fragments ==-1){
-        m_size_of_secondary_fragments =payload_len_including_size;
-      }else{
-        assert(m_size_of_secondary_fragments ==payload_len_including_size);
-      }
-    }
-    if(firstFragmentTimePoint==std::nullopt){
-      firstFragmentTimePoint=std::chrono::steady_clock::now();
-    }
-  }
-  void fragment_copy_payload(const int fragment_idx,const uint8_t *data, const std::size_t dataLen){
-    uint8_t* buff=blockBuffer[fragment_idx].data();
-    // NOTE: FECPayloadHdr::data_size needs to be included during the fec decode step
-    const uint8_t* payload_p=data+sizeof(FECPayloadHdr)-sizeof(uint16_t);
-    auto payload_s=dataLen-sizeof(FECPayloadHdr)+sizeof(uint16_t);
-    // write the data (doesn't matter if FEC data or correction packet)
-    memcpy(buff, payload_p,payload_s);
-    // set the rest to zero such that FEC works
-    memset(buff+payload_s, 0, FEC_MAX_PACKET_SIZE - payload_s);
-  }
+  void addFragment(const uint8_t *data, const std::size_t dataLen);
+  // util to copy the packet size and payload (and not more)
+  void fragment_copy_payload(const int fragment_idx,const uint8_t *data, const std::size_t dataLen);
   /**
    * @returns the indices for all primary fragments that have not yet been forwarded and are available (already received or reconstructed).
    * Once an index is returned here, it won't be returned again
    * (Therefore, as long as you immediately forward all primary fragments returned here,everything happens in order)
    * @param discardMissingPackets : if true, gaps are ignored and fragments are forwarded even though this means the missing ones are irreversible lost
    * Be carefully with this param, use it only before you need to get rid of a block */
-  std::vector<uint16_t> pullAvailablePrimaryFragments(const bool discardMissingPackets = false) {
-    // note: when pulling the available fragments, we do not need to know how many primary fragments this block actually contains
-    std::vector<uint16_t> ret;
-    for (int i = nAlreadyForwardedPrimaryFragments; i < m_n_available_primary_fragments; i++) {
-      if (fragment_map[i] == FragmentStatus::UNAVAILABLE) {
-        if (discardMissingPackets) {
-          continue;
-        } else {
-          break;
-        }
-      }
-      ret.push_back(i);
-    }
-    // make sure these indices won't be returned again
-    nAlreadyForwardedPrimaryFragments += (int) ret.size();
-    return ret;
-  }
-  const uint8_t *get_primary_fragment_data_p(const int fragment_index){
-    assert(fragment_map[fragment_index] == AVAILABLE);
-    assert(m_n_primary_fragments_in_block !=-1);
-    assert(fragment_index< m_n_primary_fragments_in_block);
-    //return blockBuffer[fragment_index].data()+sizeof(FECPayloadHdr);
-    return blockBuffer[fragment_index].data()+sizeof(uint16_t);
-  }
-  const int get_primary_fragment_data_size(const int fragment_index){
-    assert(fragment_map[fragment_index] == AVAILABLE);
-    assert(m_n_primary_fragments_in_block !=-1);
-    assert(fragment_index< m_n_primary_fragments_in_block);
-    uint16_t* len_p=(uint16_t*)blockBuffer[fragment_index].data();
-    return *len_p;
-  }
+  std::vector<uint16_t> pullAvailablePrimaryFragments(const bool discardMissingPackets = false);
+  const uint8_t *get_primary_fragment_data_p(const int fragment_index);
+  const int get_primary_fragment_data_size(const int fragment_index);
 
   // returns the n of primary and secondary fragments for this block
   int getNAvailableFragments() const {
@@ -306,24 +153,7 @@ class RxBlock {
   // make sure to check if enough secondary fragments are available before calling this method !
   // reconstructing only part of the missing data is not supported !
   // return: the n of reconstructed packets
-  int reconstructAllMissingData() {
-    //wifibroadcast::log::get_default()->debug("reconstructAllMissingData"<<nAvailablePrimaryFragments<<" "<<nAvailableSecondaryFragments<<" "<<fec.FEC_K<<"\n";
-    // NOTE: FEC does only work if nPrimaryFragments+nSecondaryFragments>=FEC_K
-    assert(m_n_primary_fragments_in_block != -1);
-    assert(m_size_of_secondary_fragments != -1);
-    // do not reconstruct if reconstruction is impossible
-    assert(getNAvailableFragments() >= m_n_primary_fragments_in_block);
-    // also do not reconstruct if reconstruction is not needed
-   // const int nMissingPrimaryFragments = m_n_primary_fragments_in_block- m_n_available_primary_fragments;
-    auto recoveredFragmentIndices = fecDecode(m_size_of_secondary_fragments, blockBuffer,
-                  m_n_primary_fragments_in_block, fragment_map);
-    for (const auto idx: recoveredFragmentIndices) {
-      fragment_map[idx] = AVAILABLE;
-    }
-    m_n_available_primary_fragments += recoveredFragmentIndices.size();
-    // n of reconstructed packets
-    return recoveredFragmentIndices.size();
-  }
+  int reconstructAllMissingData();
   [[nodiscard]] uint64_t getBlockIdx() const {
     return blockIdx;
   }
@@ -332,15 +162,8 @@ class RxBlock {
   }
   // Returns the number of missing primary packets (e.g. the n of actual data packets that are missing)
   // This only works if we know the "fec_k" parameter
-  std::optional<int> get_missing_primary_packets(){
-    if(m_n_primary_fragments_in_block<=0)return std::nullopt;
-    return m_n_primary_fragments_in_block-m_n_available_primary_fragments;
-  }
-  std::string get_missing_primary_packets_readable(){
-    const auto tmp=get_missing_primary_packets();
-    if(tmp==std::nullopt)return "?";
-    return std::to_string(tmp.value());
-  }
+  std::optional<int> get_missing_primary_packets() const;
+  std::string get_missing_primary_packets_readable() const;
  private:
   // the block idx marks which block this element refers to
   const uint64_t blockIdx = 0;
@@ -390,21 +213,7 @@ class FECDecoder {
   const bool m_enable_log_debug;
   AvgCalculator m_fec_decode_time{};
  public:
-  bool validate_and_process_packet(const uint8_t* data,int data_len){
-    if(data_len<sizeof(FECPayloadHdr)){
-      wifibroadcast::log::get_default()->warn("too small packet size:{}",data_len);
-    }
-    // reconstruct the data layout
-    const FECPayloadHdr* header_p=(FECPayloadHdr*)data;
-   /* const uint8_t* payload_p=data+sizeof(FECPayloadHdr);
-    const int payload_size=data_len-sizeof(FECPayloadHdr);*/
-    if (header_p->fragment_idx >= maxNFragmentsPerBlock) {
-      wifibroadcast::log::get_default()->warn("invalid fragment_idx: {}",header_p->fragment_idx);
-      return false;
-    }
-    process_with_rx_queue(*header_p,data,data_len);
-    return true;
-  }
+  bool validate_and_process_packet(const uint8_t* data,int data_len);
  private:
   // since we also need to search this data structure, a std::queue is not enough.
   // since we have an upper limit on the size of this dequeue, it is basically a searchable ring buffer
@@ -417,174 +226,19 @@ class FECDecoder {
    * @param discardMissingPackets : if true, gaps are ignored and fragments are forwarded even though this means the missing ones are irreversible lost
    * Be carefully with this param, use it only before you need to get rid of a block
    */
-  void forwardMissingPrimaryFragmentsIfAvailable(RxBlock &block, const bool discardMissingPackets = false){
-    assert(mSendDecodedPayloadCallback);
-    // TODO remove me
-    if(discardMissingPackets){
-      if(m_enable_log_debug){
-        wifibroadcast::log::get_default()->warn("Forwarding block that is not yet fully finished: {} with n fragments: {} missing: {}",
-                                                block.getBlockIdx(),block.getNAvailableFragments(),block.get_missing_primary_packets_readable());
-      }
-    }
-    const auto indices = block.pullAvailablePrimaryFragments(discardMissingPackets);
-    for (auto primaryFragmentIndex: indices) {
-      const uint8_t* data=block.get_primary_fragment_data_p(primaryFragmentIndex);
-      const int data_size=block.get_primary_fragment_data_size(primaryFragmentIndex);
-      if (data_size > FEC_MAX_PAYLOAD_SIZE || data_size <= 0) {
-        wifibroadcast::log::get_default()->warn("corrupted packet on FECDecoder out ({}:{}) : {}B",block.getBlockIdx(),primaryFragmentIndex,data_size);
-      } else {
-        mSendDecodedPayloadCallback(data, data_size);
-        stats.count_bytes_forwarded+=data_size;
-      }
-    }
-  }
+  void forwardMissingPrimaryFragmentsIfAvailable(RxBlock &block, const bool discardMissingPackets = false);
   // also increase lost block count if block is not fully recovered
-  void rxQueuePopFront() {
-    assert(rx_queue.front() != nullptr);
-    if (!rx_queue.front()->allPrimaryFragmentsHaveBeenForwarded()) {
-      stats.count_blocks_lost++;
-    }
-    rx_queue.pop_front();
-  }
+  void rxQueuePopFront();
   // create a new RxBlock for the specified block_idx and push it into the queue
   // NOTE: Checks first if this operation would increase the size of the queue over its max capacity
   // In this case, the only solution is to remove the oldest block before adding the new one
-  void rxRingCreateNewSafe(const uint64_t blockIdx) {
-    // check: make sure to always put blocks into the queue in order !
-    if (!rx_queue.empty()) {
-      // the newest block in the queue should be equal to block_idx -1
-      // but it must not ?!
-      if (rx_queue.back()->getBlockIdx() != (blockIdx - 1)) {
-        // If we land here, one or more full blocks are missing, which can happen on bad rx links
-        //wifibroadcast::log::get_default()->debug("In queue: {} But new: {}",rx_queue.back()->getBlockIdx(),blockIdx);
-      }
-      //assert(rx_queue.back()->getBlockIdx() == (blockIdx - 1));
-    }
-    // we can return early if this operation doesn't exceed the size limit
-    if (rx_queue.size() < RX_QUEUE_MAX_SIZE) {
-      rx_queue.push_back(std::make_unique<RxBlock>(maxNFragmentsPerBlock, blockIdx));
-      stats.count_blocks_total++;
-      return;
-    }
-    //Ring overflow. This means that there are more unfinished blocks than ring size
-    //Possible solutions:
-    //1. Increase ring size. Do this if you have large variance of packet travel time throught WiFi card or network stack.
-    //   Some cards can do this due to packet reordering inside, diffent chipset and/or firmware or your RX hosts have different CPU power.
-    //2. Reduce packet injection speed or try to unify RX hardware.
-
-    // forward remaining data for the (oldest) block, since we need to get rid of it
-    auto &oldestBlock = rx_queue.front();
-    forwardMissingPrimaryFragmentsIfAvailable(*oldestBlock, true);
-    // and remove the block once done with it
-    rxQueuePopFront();
-
-    // now we are guaranteed to have space for one new block
-    rx_queue.push_back(std::make_unique<RxBlock>(maxNFragmentsPerBlock, blockIdx));
-    stats.count_blocks_total++;
-  }
+  void rxRingCreateNewSafe(const uint64_t blockIdx);
 
   // If block is already known and not in the queue anymore return nullptr
   // else if block is inside the ring return pointer to it
   // and if it is not inside the ring add as many blocks as needed, then return pointer to it
-  RxBlock *rxRingFindCreateBlockByIdx(const uint64_t blockIdx) {
-    // check if block is already in the ring
-    auto found = std::find_if(rx_queue.begin(), rx_queue.end(),
-                              [&blockIdx](const std::unique_ptr<RxBlock> &block) {
-                                return block->getBlockIdx() == blockIdx;
-                              });
-    if (found != rx_queue.end()) {
-      return found->get();
-    }
-    // check if block is already known and not in the ring then it is already processed
-    if (last_known_block != (uint64_t) -1 && blockIdx <= last_known_block) {
-      return nullptr;
-    }
-
-    // don't forget to increase the lost blocks counter if we do not add blocks here due to no space in the rx queue
-    // (can happen easily if the rx queue has a size of 1)
-    const auto n_needed_new_blocks = last_known_block != (uint64_t) -1 ? blockIdx - last_known_block : 1;
-    if(n_needed_new_blocks>RX_QUEUE_MAX_SIZE){
-      stats.count_blocks_lost+=n_needed_new_blocks-RX_QUEUE_MAX_SIZE;
-    }
-    // add as many blocks as we need ( the rx ring mustn't have any gaps between the block indices).
-    // but there is no point in adding more blocks than RX_RING_SIZE
-    const int new_blocks = (int) std::min(n_needed_new_blocks,
-                                         (uint64_t) FECDecoder::RX_QUEUE_MAX_SIZE);
-    last_known_block = blockIdx;
-
-    for (int i = 0; i < new_blocks; i++) {
-      rxRingCreateNewSafe(blockIdx + i + 1 - new_blocks);
-    }
-    // the new block we've added is now the most recently added element (and since we always push to the back, the "back()" element)
-    assert(rx_queue.back()->getBlockIdx() == blockIdx);
-    return rx_queue.back().get();
-  }
-  void process_with_rx_queue(const FECPayloadHdr& header,const uint8_t* data,int data_size){
-    auto blockP = rxRingFindCreateBlockByIdx(header.block_idx);
-    //ignore already processed blocks
-    if (blockP == nullptr) return;
-    // cannot be nullptr
-    RxBlock &block = *blockP;
-    // ignore already processed fragments
-    if (block.hasFragment(header)) {
-      return;
-    }
-    block.addFragment(data,data_size);
-    if (block == *rx_queue.front()) {
-      //wifibroadcast::log::get_default()->debug("In front\n";
-      // we are in the front of the queue (e.g. at the oldest block)
-      // forward packets until the first gap
-      forwardMissingPrimaryFragmentsIfAvailable(block);
-      // We are done with this block if either all fragments have been forwarded or it can be recovered
-      if (block.allPrimaryFragmentsHaveBeenForwarded()) {
-        // remove block when done with it
-        rxQueuePopFront();
-        return;
-      }
-      if (block.allPrimaryFragmentsCanBeRecovered()) {
-        // apply fec for this block
-        const auto before_encode=std::chrono::steady_clock::now();
-        stats.count_fragments_recovered += block.reconstructAllMissingData();
-        stats.count_blocks_recovered++;
-        m_fec_decode_time.add(std::chrono::steady_clock::now()-before_encode);
-        if(m_fec_decode_time.get_delta_since_last_reset()>std::chrono::seconds(1)){
-          //wifibroadcast::log::get_default()->debug("FEC decode took {}",m_fec_decode_time.getAvgReadable());
-          stats.curr_fec_decode_time=m_fec_decode_time.getMinMaxAvg();
-          m_fec_decode_time.reset();
-        }
-        forwardMissingPrimaryFragmentsIfAvailable(block);
-        assert(block.allPrimaryFragmentsHaveBeenForwarded());
-        // remove block when done with it
-        rxQueuePopFront();
-        return;
-      }
-      return;
-    } else {
-      //wifibroadcast::log::get_default()->debug("Not in front\n";
-      // we are not in the front of the queue but somewhere else
-      // If this block can be fully recovered or all primary fragments are available this triggers a flush
-      if (block.allPrimaryFragmentsAreAvailable() || block.allPrimaryFragmentsCanBeRecovered()) {
-        // send all queued packets in all unfinished blocks before and remove them
-        while (block != *rx_queue.front()) {
-          forwardMissingPrimaryFragmentsIfAvailable(*rx_queue.front(), true);
-          rxQueuePopFront();
-        }
-        // then process the block who is fully recoverable or has no gaps in the primary fragments
-        if (block.allPrimaryFragmentsAreAvailable()) {
-          forwardMissingPrimaryFragmentsIfAvailable(block);
-          assert(block.allPrimaryFragmentsHaveBeenForwarded());
-        } else {
-          // apply fec for this block
-          stats.count_fragments_recovered += block.reconstructAllMissingData();
-          stats.count_blocks_recovered++;
-          forwardMissingPrimaryFragmentsIfAvailable(block);
-          assert(block.allPrimaryFragmentsHaveBeenForwarded());
-        }
-        // remove block
-        rxQueuePopFront();
-      }
-    }
-  }
+  RxBlock *rxRingFindCreateBlockByIdx(const uint64_t blockIdx);
+  void process_with_rx_queue(const FECPayloadHdr& header,const uint8_t* data,int data_size);
  public:
   // matches FECDecoder
   struct FECRxStats {
