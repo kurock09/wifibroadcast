@@ -91,16 +91,14 @@ class TxRxInstance {
      int32_t count_tx_injections_error_hint;
    };
    struct RxStats{
-     // Total count of received packets - can be from another wb tx, but also from someone else using wifi
+     // Total count of received packets / bytes - can be from another wb tx, but also from someone else using wifi
      int64_t count_p_any=0;
-     // Total count of valid received packets (decrypted)
-     int64_t count_p_valid=0;
-     // Total amount of received bytes (including foreign packets)
      int64_t count_bytes_any=0;
-     // only including valid packets
+     // Total count of valid received packets / bytes (decrypted)
+     int64_t count_p_valid=0;
      int64_t count_bytes_valid=0;
      // n received valid session key packets
-     int n_received_session_key_packets;
+     int n_received_valid_session_key_packets=0;
      // this value is recalculated in 2 seconds intervals
      int32_t curr_packet_loss=-1;
      // mcs index on the most recent okay data packet, if the card supports reporting it

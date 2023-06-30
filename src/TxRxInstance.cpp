@@ -225,6 +225,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     WBSessionKeyPacket &sessionKeyPacket = *((WBSessionKeyPacket *) parsedPacket->payload);
     if (m_decryptor->onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData)) {
       m_console->debug("Initializing new session.");
+      m_rx_stats.n_received_valid_session_key_packets++;
     }
   }else{
     // the payload needs to include at least the nonce, the encryption suffix and 1 byte of actual payload
@@ -274,7 +275,8 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
     if(wlan_idx==0){
       uint16_t tmp=nonce;
       m_seq_nr_helper.on_new_sequence_number(tmp);
-      m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
+      m_rx_stats.curr_packet_loss=m_seq_nr_helper.get_current_loss_percent();
+      //m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
     }
     return true;
   }
