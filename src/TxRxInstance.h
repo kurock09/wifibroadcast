@@ -96,10 +96,10 @@ class TxRxInstance {
 
    // Statistics
    struct TxStats{
-     int64_t n_injected_packets;
-     int64_t n_injected_bytes;
+     int64_t n_injected_packets=0;
+     int64_t n_injected_bytes=0;
      // tx errors, first sign the tx can't keep up with the provided bitrate
-     int32_t count_tx_injections_error_hint;
+     int32_t count_tx_injections_error_hint=0;
    };
    struct RxStats{
      // Total count of received packets / bytes - can be from another wb tx, but also from someone else using wifi
@@ -160,8 +160,8 @@ class TxRxInstance {
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
-  RxStats m_rx_stats;
-  TxStats m_tx_stats;
+  RxStats m_rx_stats{};
+  TxStats m_tx_stats{};
   // a tx error is thrown if injecting the packet takes longer than MAX_SANE_INJECTION_TIME,
   // which hints at a overflowing tx queue (unfortunately I don't know a way to directly get the tx queue yet)
   // However, this hint can be misleading - for example, during testing (MCS set to 3) and with about 5MBit/s video after FEC
