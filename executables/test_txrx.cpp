@@ -10,12 +10,16 @@
 
 int main(int argc, char *const *argv) {
   std::string card="wlxac9e17596103";
+  bool pcap_setdirection= true;
   int opt;
-  while ((opt = getopt(argc, argv, "w:")) != -1) {
+  while ((opt = getopt(argc, argv, "w:d")) != -1) {
     switch (opt) {
       case 'w':
         card = optarg;
         break;
+      case 'd':
+        pcap_setdirection= false;
+        break ;
       default: /* '?' */
       show_usage:
         fprintf(stderr,
@@ -29,7 +33,7 @@ int main(int argc, char *const *argv) {
   WBTxRx::Options options_txrx{};
   options_txrx.rtl8812au_rssi_fixup= true;
   //options_txrx.set_direction= false;
-  options_txrx.set_direction= true;
+  options_txrx.set_direction= pcap_setdirection;
   options_txrx.log_all_received_validated_packets= true;
 
   std::shared_ptr<WBTxRx> txrx=std::make_shared<WBTxRx>(cards,options_txrx);
