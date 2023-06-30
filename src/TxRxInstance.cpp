@@ -178,17 +178,19 @@ int TxRxInstance::loop_iter(int rx_index) {
 
 void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
-  m_rx_packet_stats[wlan_idx].count_p_any++;
   const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
-  const uint8_t *pkt_payload = parsedPacket->payload;
-  const size_t pkt_payload_size = parsedPacket->payloadSize;
-
   if (parsedPacket == std::nullopt) {
     if(m_advanced_debugging_rx){
       m_console->warn("Discarding packet due to pcap parsing error!");
     }
     return;
   }
+  const uint8_t *pkt_payload = parsedPacket->payload;
+  const size_t pkt_payload_size = parsedPacket->payloadSize;
+  m_rx_stats.count_p_any++;
+  m_rx_stats.count_bytes_any+=pkt_payload_size;
+  m_rx_packet_stats[wlan_idx].count_p_any++;
+
   if (parsedPacket->frameFailedFCSCheck) {
     if(m_advanced_debugging_rx){
       m_console->debug("Discarding packet due to bad FCS!");
@@ -235,6 +237,8 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     }
     const bool valid=process_received_data_packet(wlan_idx,radio_port,pkt_payload,pkt_payload_size);
     if(valid){
+      m_rx_stats.count_p_valid++;
+      m_rx_stats.count_bytes_valid+=pkt_payload_size;
       // We only use known "good" packets for those stats.
       auto &this_wifi_card_stats = m_rx_packet_stats.at(wlan_idx);
       auto& rssi_for_this_card=this_wifi_card_stats.rssi_for_wifi_card;
@@ -267,7 +271,6 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
                                          decrypted->data(),decrypted->size());
   if(res!=-1){
     on_valid_packet(nonce,wlan_idx,radio_port,decrypted->data(),decrypted->size());
-    m_rx_packet_stats[wlan_idx].count_p_valid++;
     if(wlan_idx==0){
       uint16_t tmp=nonce;
       m_seq_nr_helper.on_new_sequence_number(tmp);

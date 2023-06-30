@@ -95,6 +95,12 @@ class TxRxInstance {
      int64_t count_p_any=0;
      // Total count of valid received packets (decrypted)
      int64_t count_p_valid=0;
+     // Total amount of received bytes (including foreign packets)
+     int64_t count_bytes_any=0;
+     // only including valid packets
+     int64_t count_bytes_valid=0;
+     // n received valid session key packets
+     int n_received_session_key_packets;
      // this value is recalculated in 2 seconds intervals
      int32_t curr_packet_loss=-1;
      // mcs index on the most recent okay data packet, if the card supports reporting it
