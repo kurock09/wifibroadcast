@@ -20,8 +20,8 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};
-    pcapTxRx.tx=RawReceiverHelper::helper_open_pcap_rx(wifi_card);
-    pcapTxRx.rx=RawTransmitterHelper::openTxWithPcap(wifi_card);
+    pcapTxRx.rx=RawReceiverHelper::helper_open_pcap_rx(wifi_card);
+    pcapTxRx.tx=RawTransmitterHelper::openTxWithPcap(wifi_card);
     if(m_options.set_direction){
       pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
     }
