@@ -102,7 +102,6 @@ class WBStreamTx {
   uint64_t m_n_dropped_packets=0;
   // Time fragments / blocks spend in the non-blocking atomic queue.
   AvgCalculator m_queue_time_calculator;
-  //
   // n of packets fed to the instance
   int64_t m_n_input_packets = 0;
   // count of bytes we got passed (aka for example, what the video encoder produced - does not include FEC)
