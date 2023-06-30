@@ -332,15 +332,14 @@ class RxBlock {
   }
   // Returns the number of missing primary packets (e.g. the n of actual data packets that are missing)
   // This only works if we know the "fec_k" parameter
-  /*std::optional<int> get_missing_primary_packets(){
-    if(fec_k<=0)return std::nullopt;
-    return fec_k-nAvailablePrimaryFragments;
-  }*/
+  std::optional<int> get_missing_primary_packets(){
+    if(m_n_primary_fragments_in_block<=0)return std::nullopt;
+    return m_n_primary_fragments_in_block-m_n_available_primary_fragments;
+  }
   std::string get_missing_primary_packets_readable(){
-    /*const auto tmp=get_missing_primary_packets();
+    const auto tmp=get_missing_primary_packets();
     if(tmp==std::nullopt)return "?";
-    return std::to_string(tmp.value());*/
-    return "TODO";
+    return std::to_string(tmp.value());
   }
  private:
   // the block idx marks which block this element refers to
