@@ -84,11 +84,11 @@ struct WBRxStats{
   uint64_t count_bytes_data_received=0;
   // current incoming bitrate, in bits per second.
   // includes FEC overhead
-  uint64_t curr_incoming_bits_per_second =0;
-  // current packet loss, in percent
   int16_t curr_packet_loss_percentage=-1;
   // N of "big gaps", recalculated in regular intervals. Together with the packet loss
   // in percent this gives a good overview over the current quality of the link.
+  uint64_t curr_incoming_bits_per_second =0;
+  // current packet loss, in percent
   // What exactly counts as a "big gap" cannot be exactly defined.
   int curr_n_of_big_gaps=-1;
   // should only increase when the wifi card disconnects / crashes
