@@ -23,7 +23,7 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,Options option
   m_console->info("WBTransmitter radio_port: {} fec:{}", options.radio_port, options.enable_fec ? "Y" : "N");
   if(options.enable_fec){
     m_block_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedBlock>>>(options.block_data_queue_size);
-    m_fec_encoder = std::make_unique<bla::FECEncoder>();
+    m_fec_encoder = std::make_unique<FECEncoder>();
     auto cb=[this](const uint8_t* packet,int packet_len){
       send_packet(packet,packet_len);
     };
@@ -64,7 +64,7 @@ bool WBTransmitter2::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> pa
 bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
   assert(options.enable_fec);
   for(const auto& fragment:fragments){
-    if (fragment->empty() || fragment->size() > bla::FEC_MAX_PAYLOAD_SIZE) {
+    if (fragment->empty() || fragment->size() > FEC_MAX_PAYLOAD_SIZE) {
       m_console->warn("Fed fragment with incompatible size:{}",fragment->size());
       return false;
     }
@@ -151,7 +151,7 @@ void WBTransmitter2::process_enqueued_packet(const WBTransmitter2::EnqueuedPacke
 void WBTransmitter2::process_enqueued_block(const WBTransmitter2::EnqueuedBlock& block) {
   auto blocks=blocksize::split_frame_if_needed(block.fragments,block.max_block_size);
   for(auto& x_block :blocks){
-    const auto n_secondary_f=bla::calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
+    const auto n_secondary_f=calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
     m_fec_encoder->encode_block(x_block,n_secondary_f);
   }
   m_n_input_packets+=block.fragments.size();

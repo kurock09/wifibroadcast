@@ -71,7 +71,7 @@ class WBReceiver2 {
   // for calculating the current rx bitrate
   BitrateCalculator m_received_bitrate_calculator{};
   // On the rx, either one of those two is active at the same time. NOTE: nullptr until the first session key packet
-  std::unique_ptr<bla::FECDecoder> m_fec_decoder = nullptr;
+  std::unique_ptr<FECDecoder> m_fec_decoder = nullptr;
   std::unique_ptr<FECDisabledDecoder2> m_fec_disabled_decoder = nullptr;
   seq_nr::Helper m_seq_nr_helper;
   void on_new_packet(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len);

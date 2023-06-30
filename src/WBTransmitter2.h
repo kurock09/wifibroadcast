@@ -79,7 +79,7 @@ class WBTransmitter2 {
   const Options options;
   std::shared_ptr<TxRxInstance> m_txrx;
   // On the tx, either one of those two is active at the same time
-  std::unique_ptr<bla::FECEncoder> m_fec_encoder = nullptr;
+  std::unique_ptr<FECEncoder> m_fec_encoder = nullptr;
   std::unique_ptr<FECDisabledEncoder2> m_fec_disabled_encoder = nullptr;
   // We have two data queues with a slightly different layout (depending on the selected operating mode)
   struct EnqueuedPacket {

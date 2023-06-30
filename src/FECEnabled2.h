@@ -24,8 +24,6 @@
 
 static_assert(__BYTE_ORDER == __LITTLE_ENDIAN, "This code is written for little endian only !");
 
-namespace bla{
-
 struct FECPayloadHdr{
   // Most often each frame is encoded as one fec block
   // rolling
@@ -612,7 +610,5 @@ class FECDecoder {
 // unsigned 24 bits holds 16777215 . At 1000 blocks per second this allows the tx to create blocks for 16777.215 seconds or 4.6 hours. That should cover a flight (and after 4.6h a reset happens,
 // which means you might lose a couple of blocks once every 4.6 h )
 // and 8 bits holds max 255.
-
-}
 
 #endif  // WIFIBROADCAST_FECENABLED2_H
