@@ -70,3 +70,16 @@ WBReceiver2::Statistics WBReceiver2::get_latest_stats() {
       m_n_input_bytes,std::chrono::seconds(2));
   return ret;
 }
+
+WBReceiver2::FECRxStats2 WBReceiver2::get_lates_fec_stats() {
+  WBReceiver2::FECRxStats2 ret;
+  if(m_fec_decoder){
+    auto stats=m_fec_decoder->stats;
+    ret.count_blocks_lost= stats.count_blocks_lost;
+    ret.count_blocks_recovered=stats.count_blocks_recovered;
+    ret.count_blocks_total=stats.count_blocks_total;
+    ret.count_fragments_recovered=stats.count_fragments_recovered;
+    ret.curr_fec_decode_time=stats.curr_fec_decode_time;
+  }
+  return ret;
+}
