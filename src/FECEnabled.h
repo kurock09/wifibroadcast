@@ -2,8 +2,8 @@
 // Created by consti10 on 28.06.23.
 //
 
-#ifndef WIFIBROADCAST_FECENABLED2_H
-#define WIFIBROADCAST_FECENABLED2_H
+#ifndef WIFIBROADCAST_FECENABLED_H
+#define WIFIBROADCAST_FECENABLED_H
 
 #include <array>
 #include <cerrno>
@@ -611,4 +611,4 @@ class FECDecoder {
 // which means you might lose a couple of blocks once every 4.6 h )
 // and 8 bits holds max 255.
 
-#endif  // WIFIBROADCAST_FECENABLED2_H
+#endif  // WIFIBROADCAST_FECENABLED_H

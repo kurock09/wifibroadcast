@@ -5,8 +5,8 @@
 #ifndef WIFIBROADCAST_WBSTREAMRX_H
 #define WIFIBROADCAST_WBSTREAMRX_H
 
-#include "FECDisabled2.hpp"
-#include "FECEnabled2.h"
+#include "FECDisabled.hpp"
+#include "FECEnabled.h"
 #include "HelperSources/Helper.hpp"
 #include "HelperSources/SeqNrHelper.hpp"
 #include "HelperSources/SequenceNumberDebugger.hpp"
