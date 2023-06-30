@@ -29,12 +29,21 @@ class WBReceiver2 {
     unsigned int rx_queue_depth=1;
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
+    // enable / disable multi threading (decouples the processing of data from the thread that provided the data,
+    // e.g. the thread inside TxRxInstance
+    //bool enable_threading= true;
   };
   WBReceiver2(std::shared_ptr<TxRxInstance> txrx,Options options1);
   WBReceiver2(const WBReceiver2 &) = delete;
   WBReceiver2 &operator=(const WBReceiver2 &) = delete;
   void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
-  WBReceiverStats get_latest_stats();
+  struct Statistics{
+    int64_t n_input_packets=0;
+    int64_t n_input_bytes=0;
+    int curr_in_packets_per_second=0;
+    int curr_in_bits_per_second=0;
+  };
+  Statistics get_latest_stats();
  private:
   const Options m_options;
   std::shared_ptr<TxRxInstance> m_txrx;
@@ -42,6 +51,10 @@ class WBReceiver2 {
   std::vector<StatsPerRxCard> m_stats_per_card;
   // Callback that is called with the decoded data
   WBReceiver2::OUTPUT_DATA_CALLBACK m_out_cb= nullptr;
+  int64_t m_n_input_packets=0;
+  int64_t m_n_input_bytes=0;
+  BitrateCalculator m_input_bitrate_calculator{};
+  PacketsPerSecondCalculator m_input_packets_per_second_calculator{};
   WBRxStats m_wb_rx_stats{};
   // for calculating the current rx bitrate
   BitrateCalculator m_received_bitrate_calculator{};

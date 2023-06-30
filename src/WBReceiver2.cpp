@@ -44,6 +44,8 @@ void WBReceiver2::set_latest_stats(WBReceiverStats new_stats) {
 }
 
 void WBReceiver2::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *data,const std::size_t data_len) {
+  m_n_input_packets++;
+  m_n_input_bytes+=data_len;
   if(m_options.enable_fec){
     m_fec_decoder->validate_and_process_packet(data,data_len);
   }else{
@@ -57,11 +59,14 @@ void WBReceiver2::on_decoded_packet(const uint8_t *data, int data_len) {
   }
 }
 
-WBReceiverStats WBReceiver2::get_latest_stats() {
-  WBReceiverStats ret{};
-  ret.stats_per_card.resize(10);
-  if(m_options.enable_fec){
-    ret.fec_rx_stats=m_fec_decoder->stats;
-  }
+WBReceiver2::Statistics WBReceiver2::get_latest_stats() {
+  WBReceiver2::Statistics ret;
+  ret.n_input_bytes=m_n_input_bytes;
+  ret.n_input_packets=m_n_input_packets;
+  ret.curr_in_packets_per_second=
+      m_input_packets_per_second_calculator.get_last_or_recalculate(
+          m_n_input_packets,std::chrono::seconds(2));
+  ret.curr_in_bits_per_second=m_input_bitrate_calculator.get_last_or_recalculate(
+      m_n_input_bytes,std::chrono::seconds(2));
   return ret;
 }
