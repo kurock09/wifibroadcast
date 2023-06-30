@@ -28,7 +28,7 @@ target_sources(wifibroadcast PUBLIC
         # the couple of non-header-only files for wifibroadcast
         ${CMAKE_CURRENT_LIST_DIR}/src/WBReceiver2.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/WBTransmitter2.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/TxRxInstance.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/src/WBTxRx.cpp
         )
 target_include_directories(wifibroadcast PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/src/HelperSources
