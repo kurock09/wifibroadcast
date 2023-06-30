@@ -178,6 +178,9 @@ int TxRxInstance::loop_iter(int rx_index) {
 
 void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
+  if(m_options.log_all_received_packets){
+    m_console->debug("Got packet {} {}",wlan_idx,hdr.len);
+  }
   const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
   if (parsedPacket == std::nullopt) {
     if(m_options.advanced_debugging_rx){

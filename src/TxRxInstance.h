@@ -41,6 +41,8 @@ class TxRxInstance {
     bool set_direction= true;
     bool advanced_debugging_tx = false;
     bool advanced_debugging_rx = false;
+    // spams console, but usefully for debugging - log all received packets (regardless where they are from)
+    bool log_all_received_packets= false;
   };
   explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1);
   TxRxInstance(const TxRxInstance &) = delete;
