@@ -98,10 +98,13 @@ class TxRxInstance {
      // Total count of valid received packets / bytes (decrypted)
      int64_t count_p_valid=0;
      int64_t count_bytes_valid=0;
+     // Those values are recalculated in X second intervals.
+     // If no data arrives for a long time, they report -1 instead of 0
+     int32_t curr_packet_loss=-1;
+     int32_t curr_packets_per_second=-1;
+     int32_t curr_bytes_per_second=-1;
      // n received valid session key packets
      int n_received_valid_session_key_packets=0;
-     // this value is recalculated in 2 seconds intervals
-     int32_t curr_packet_loss=-1;
      // mcs index on the most recent okay data packet, if the card supports reporting it
      int last_received_packet_mcs_index=-1;
      // channel width (20Mhz or 40Mhz) on the most recent received okay data packet, if the card supports reporting it
