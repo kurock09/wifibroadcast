@@ -13,6 +13,7 @@ WBTransmitter2::WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,Options option
     :options(options1),
       m_txrx(txrx)
 {
+  assert(m_txrx);
   if(options.opt_console){
     m_console=options.opt_console;
   }else{

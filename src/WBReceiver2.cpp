@@ -10,6 +10,7 @@ WBReceiver2::WBReceiver2(std::shared_ptr<TxRxInstance> txrx,Options options1)
     : m_txrx(txrx),
       m_options(options1)
 {
+  assert(m_txrx);
   if(m_options.opt_console){
     m_console=m_options.opt_console;
   }else{
