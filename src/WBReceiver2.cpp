@@ -60,5 +60,8 @@ void WBReceiver2::on_decoded_packet(const uint8_t *data, int data_len) {
 WBReceiverStats WBReceiver2::get_latest_stats() {
   WBReceiverStats ret{};
   ret.stats_per_card.resize(10);
+  if(m_options.enable_fec){
+    ret.fec_rx_stats=m_fec_decoder->stats;
+  }
   return ret;
 }

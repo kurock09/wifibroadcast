@@ -83,11 +83,29 @@ bool WBTransmitter2::try_enqueue_block(std::vector<std::shared_ptr<std::vector<u
 }
 
 FECTxStats WBTransmitter2::get_latest_fec_stats() {
-  return FECTxStats();
+  FECTxStats ret{};
+  if(m_fec_encoder){
+    ret.curr_fec_encode_time=m_fec_encoder->m_curr_fec_block_encode_time;
+    ret.curr_fec_block_length=m_fec_encoder->m_curr_fec_block_sizes;
+  }
+  return ret;
 }
 
 WBTxStats WBTransmitter2::get_latest_stats() {
-  return WBTxStats();
+  WBTxStats ret{};
+  /*ret.n_injected_packets= m_n_injected_packets;
+  ret.n_injected_bytes=static_cast<int64_t>(m_count_bytes_data_injected);
+  ret.current_injected_bits_per_second=bitrate_calculator_injected_bytes.get_last_or_recalculate(
+      m_count_bytes_data_injected,std::chrono::seconds(2));
+  ret.current_provided_bits_per_second=
+      m_bitrate_calculator_data_provided.get_last_or_recalculate(
+          m_count_bytes_data_provided,std::chrono::seconds(2));
+  ret.count_tx_injections_error_hint= m_count_tx_injections_error_hint;
+  ret.n_dropped_packets=m_n_dropped_packets;
+  ret.current_injected_packets_per_second=
+      m_packets_per_second_calculator.get_last_or_recalculate(
+          m_n_injected_packets,std::chrono::seconds(2));*/
+  return ret;
 }
 
 
