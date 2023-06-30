@@ -14,6 +14,7 @@
 #include "RSSIForWifiCard.hpp"
 #include "RadiotapHeader.hpp"
 #include "SeqNrHelper.hpp"
+#include "TimeHelper.hpp"
 #include "wifibroadcast.hpp"
 
 /**
@@ -49,6 +50,8 @@ class WBTxRx {
     bool advanced_debugging_tx = false;
     // more verbose rx logging
     bool advanced_debugging_rx = false;
+    // advanced latency related debugging
+    bool advanced_latency_debugging_rx= false;
   };
   explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
   WBTxRx(const WBTxRx &) = delete;
@@ -174,6 +177,9 @@ class WBTxRx {
   static constexpr std::chrono::nanoseconds MAX_SANE_INJECTION_TIME=std::chrono::milliseconds(5);
   std::vector<RxStatsPerCard> m_rx_packet_stats;
   std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
+  // If each iteration pulls too many packets out your CPU is most likely too slow
+  AvgCalculatorSize m_n_packets_polled_pcap;
+  AvgCalculator m_packet_host_latency;
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();

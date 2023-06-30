@@ -160,18 +160,24 @@ int WBTxRx::loop_iter(int rx_index) {
     struct pcap_pkthdr hdr{};
     const uint8_t *pkt = pcap_next(ppcap, &hdr);
     if (pkt == nullptr) {
-#ifdef ENABLE_ADVANCED_DEBUGGING
-      nOfPacketsPolledFromPcapQueuePerIteration.add(nPacketsPolledUntilQueueWasEmpty);
-      wifibroadcast::log::get_default()->debug("nOfPacketsPolledFromPcapQueuePerIteration: {}",nOfPacketsPolledFromPcapQueuePerIteration.getAvgReadable());
-      nOfPacketsPolledFromPcapQueuePerIteration.reset();
-#endif
+      if(m_options.advanced_latency_debugging_rx){
+        m_n_packets_polled_pcap.add(nPacketsPolledUntilQueueWasEmpty);
+        if(m_n_packets_polled_pcap.get_delta_since_last_reset()>std::chrono::seconds(1)){
+          m_console->debug("m_n_packets_polled_pcap: {}",m_n_packets_polled_pcap.getAvgReadable());
+          m_n_packets_polled_pcap.reset();
+        }
+      }
       break;
     }
+    if(m_options.advanced_latency_debugging_rx){
+      const auto delta=std::chrono::system_clock::now()-MyTimeHelper::to_time_point_system_clock(hdr.ts);
+      m_packet_host_latency.add(delta);
+      if(m_packet_host_latency.get_delta_since_last_reset()>std::chrono::seconds(1)){
+        m_console->debug("packet latency {}",m_packet_host_latency.getAvgReadable());
+        m_packet_host_latency.reset();
+      }
+    }
     on_new_packet(rx_index,hdr,pkt);
-#ifdef ENABLE_ADVANCED_DEBUGGING
-    // how long the cpu spends on agg.processPacket
-    timeForParsingPackets.printInIntervalls(std::chrono::seconds(1));
-#endif
     nPacketsPolledUntilQueueWasEmpty++;
   }
   return nPacketsPolledUntilQueueWasEmpty;
