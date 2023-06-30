@@ -22,7 +22,9 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
     PcapTxRx pcapTxRx{};
     pcapTxRx.tx=RawReceiverHelper::helper_open_pcap_rx(wifi_card);
     pcapTxRx.rx=RawTransmitterHelper::openTxWithPcap(wifi_card);
-    //pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
+    if(m_options.set_direction){
+      pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
+    }
     m_pcap_handles.push_back(pcapTxRx);
     auto fd = pcap_get_selectable_fd(pcapTxRx.rx);
     m_receive_pollfds[i].fd = fd;

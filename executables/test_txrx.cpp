@@ -14,6 +14,7 @@ int main(int argc, char *const *argv) {
   std::vector<std::string> cards{card};
   TxRxInstance::Options options_txrx{};
   options_txrx.rtl8812au_rssi_fixup= true;
+  options_txrx.set_direction= false;
   std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards,options_txrx);
 
   const bool enable_fec= true;

@@ -34,6 +34,8 @@ class TxRxInstance {
     std::optional<std::string> encryption_key = std::nullopt;
     // dirty, rssi on rtl8812au is "bugged", this discards the first rssi value reported by the card.
     bool rtl8812au_rssi_fixup=false;
+    // TODO
+    bool set_direction= true;
   };
   explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1);
   TxRxInstance(const TxRxInstance &) = delete;
