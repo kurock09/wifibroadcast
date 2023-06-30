@@ -15,7 +15,7 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
 {
   assert(!m_wifi_cards.empty());
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
-  m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(wifi_cards),m_options.set_direction);
+  m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(m_wifi_cards),m_options.set_direction);
   m_receive_pollfds.resize(m_wifi_cards.size());
   m_rx_packet_stats.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
