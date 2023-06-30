@@ -36,7 +36,7 @@ class FECDisabledEncoder2 {
   OUTPUT_DATA_CALLBACK outputDataCallback;
   void encodePacket(const uint8_t *buf, const size_t size) {
     std::vector<uint8_t> tmp(size+sizeof(FECDisabledHeader));
-    FECDisabledHeader hdr;
+    FECDisabledHeader hdr{};
     hdr.sequence_number=currPacketIndex;
     // copy the header
     memcpy(tmp.data(),(uint8_t*)&hdr,sizeof(FECDisabledHeader));
