@@ -148,7 +148,6 @@ void TxRxInstance::loop_receive_packets() {
         rc -= 1;
       }
     }
-
   }
 }
 
@@ -379,7 +378,9 @@ TxRxInstance::TxStats TxRxInstance::get_tx_stats() {
 }
 
 TxRxInstance::RxStats TxRxInstance::get_rx_stats() {
-  return m_rx_stats;
+  TxRxInstance::RxStats ret=m_rx_stats;
+  ret.curr_packet_loss=m_seq_nr_helper.get_current_loss_percent();
+  return ret;
 }
 
 TxRxInstance::RxStatsPerCard TxRxInstance::get_rx_stats_for_card(int card_index) {

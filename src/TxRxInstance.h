@@ -95,6 +95,8 @@ class TxRxInstance {
      int64_t count_p_any=0;
      // Total count of valid received packets (decrypted)
      int64_t count_p_valid=0;
+     // this value is recalculated in 2 seconds intervals
+     int32_t curr_packet_loss=-1;
      // mcs index on the most recent okay data packet, if the card supports reporting it
      int last_received_packet_mcs_index=-1;
      // channel width (20Mhz or 40Mhz) on the most recent received okay data packet, if the card supports reporting it
