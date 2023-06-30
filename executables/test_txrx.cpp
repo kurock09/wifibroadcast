@@ -2,11 +2,11 @@
 // Created by consti10 on 27.06.23.
 //
 
-#include "../src/TxRxInstance.h"
-#include "RandomBufferPot.hpp"
-#include "../src/WBTransmitter2.h"
 #include "../src/WBReceiver2.h"
+#include "../src/WBTransmitter2.h"
+#include "../src/WBTxRx.h"
 #include "../src/wifibroadcast-spdlog.h"
+#include "RandomBufferPot.hpp"
 
 int main(int argc, char *const *argv) {
   std::string card="wlxac9e17596103";
@@ -26,13 +26,13 @@ int main(int argc, char *const *argv) {
   }
 
   std::vector<std::string> cards{card};
-  TxRxInstance::Options options_txrx{};
+  WBTxRx::Options options_txrx{};
   options_txrx.rtl8812au_rssi_fixup= true;
   //options_txrx.set_direction= false;
   options_txrx.set_direction= true;
   options_txrx.log_all_received_validated_packets= true;
 
-  std::shared_ptr<TxRxInstance> txrx=std::make_shared<TxRxInstance>(cards,options_txrx);
+  std::shared_ptr<WBTxRx> txrx=std::make_shared<WBTxRx>(cards,options_txrx);
 
   const bool enable_fec= true;
   WBTransmitter2::Options options_tx{};

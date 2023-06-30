@@ -2,8 +2,8 @@
 // Created by consti10 on 27.06.23.
 //
 
-#ifndef WIFIBROADCAST_TXRXINSTANCE_H
-#define WIFIBROADCAST_TXRXINSTANCE_H
+#ifndef WIFIBROADCAST_WBTXRX_H
+#define WIFIBROADCAST_WBTXRX_H
 
 #include <sys/poll.h>
 
@@ -23,12 +23,12 @@
  * Adds packet encryption and authentication via libsodium (can be disabled for
  * performance) Allows multiplexing of multiple data streams (radio_port) Quick
  * usage description by example: System 1: card 1 System 2: card 2 air in
- * between card 1 and card 2 Create an instance of TxRxInstance on both system 1
- * and system 2 inject packets using TxRxInstance on system 1 -> receive them
- * using TxRxInstance on system 2 inject packets using TxRxInstance on system 2
- * -> receive them using TxRxInstance on system 1
+ * between card 1 and card 2 Create an instance of WBTxRx on both system 1
+ * and system 2 inject packets using WBTxRx on system 1 -> receive them
+ * using WBTxRx on system 2 inject packets using WBTxRx on system 2
+ * -> receive them using WBTxRx on system 1
  */
-class TxRxInstance {
+class WBTxRx {
  public:
   struct Options{
     // file for encryptor
@@ -47,10 +47,10 @@ class TxRxInstance {
     // more verbose rx logging
     bool advanced_debugging_rx = false;
   };
-  explicit TxRxInstance(std::vector<std::string> wifi_cards,Options options1);
-  TxRxInstance(const TxRxInstance &) = delete;
-  TxRxInstance &operator=(const TxRxInstance &) = delete;
-  ~TxRxInstance();
+  explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
+  WBTxRx(const WBTxRx &) = delete;
+  WBTxRx &operator=(const WBTxRx &) = delete;
+  ~WBTxRx();
   /**
    * Creates a valid injection packet which has the layout:
    * radiotap_header,ieee_80211_header,nonce (64 bit), encrypted data, encryption prefix
@@ -187,4 +187,4 @@ class TxRxInstance {
   void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
 };
 
-#endif  // WIFIBROADCAST_TXRXINSTANCE_H
+#endif  // WIFIBROADCAST_WBTXRX_H

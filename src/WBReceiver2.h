@@ -11,7 +11,7 @@
 #include "HelperSources/SeqNrHelper.hpp"
 #include "HelperSources/SequenceNumberDebugger.hpp"
 #include "HelperSources/TimeHelper.hpp"
-#include "TxRxInstance.h"
+#include "WBTxRx.h"
 #include "wifibroadcast-spdlog.h"
 #include "wifibroadcast.hpp"
 
@@ -29,10 +29,10 @@ class WBReceiver2 {
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
     // enable / disable multi threading (decouples the processing of data from the thread that provided the data,
-    // e.g. the thread inside TxRxInstance
+    // e.g. the thread inside WBTxRx
     //bool enable_threading= true;
   };
-  WBReceiver2(std::shared_ptr<TxRxInstance> txrx,Options options1);
+  WBReceiver2(std::shared_ptr<WBTxRx> txrx,Options options1);
   WBReceiver2(const WBReceiver2 &) = delete;
   WBReceiver2 &operator=(const WBReceiver2 &) = delete;
   void set_callback(WBReceiver2::OUTPUT_DATA_CALLBACK output_data_callback);
@@ -60,7 +60,7 @@ class WBReceiver2 {
   FECRxStats2 get_lates_fec_stats();
  private:
   const Options m_options;
-  std::shared_ptr<TxRxInstance> m_txrx;
+  std::shared_ptr<WBTxRx> m_txrx;
   std::shared_ptr<spdlog::logger> m_console;
   // Callback that is called with the decoded data
   WBReceiver2::OUTPUT_DATA_CALLBACK m_out_cb= nullptr;

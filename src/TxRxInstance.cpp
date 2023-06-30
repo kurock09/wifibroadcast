@@ -2,13 +2,12 @@
 // Created by consti10 on 27.06.23.
 //
 
-#include "TxRxInstance.h"
-
 #include <utility>
 
+#include "WBTxRx.h"
 #include "pcap_helper.h"
 
-TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
+WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
     : m_options(options1),
       m_wifi_cards(std::move(wifi_cards)),
       m_radiotap_header(RadiotapHeader::UserSelectableParams{})
@@ -39,7 +38,7 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
   m_session_key_announce_ts = std::chrono::steady_clock::now()+SESSION_KEY_ANNOUNCE_DELTA;
 }
 
-TxRxInstance::~TxRxInstance() {
+WBTxRx::~WBTxRx() {
   stop_receiving();
   for(auto& fd: m_receive_pollfds){
     close(fd.fd);
@@ -50,7 +49,7 @@ TxRxInstance::~TxRxInstance() {
   }
 }
 
-void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
+void WBTxRx::tx_inject_packet(const uint8_t radioPort,
                                     const uint8_t* data, int data_len) {
   std::lock_guard<std::mutex> guard(m_tx_mutex);
   // new wifi packet
@@ -101,15 +100,16 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
   announce_session_key_if_needed();
 }
 
-void TxRxInstance::rx_register_callback(TxRxInstance::OUTPUT_DATA_CALLBACK cb) {
+void WBTxRx::rx_register_callback(WBTxRx::OUTPUT_DATA_CALLBACK cb) {
   m_output_cb=std::move(cb);
 }
 
-void TxRxInstance::rx_register_specific_cb(const uint8_t radioPort,TxRxInstance::SPECIFIC_OUTPUT_DATA_CB cb) {
+void WBTxRx::rx_register_specific_cb(const uint8_t radioPort,
+                                     WBTxRx::SPECIFIC_OUTPUT_DATA_CB cb) {
   m_specific_callbacks[radioPort]=std::move(cb);
 }
 
-void TxRxInstance::loop_receive_packets() {
+void WBTxRx::loop_receive_packets() {
   while (keep_receiving){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
     int rc = poll(m_receive_pollfds.data(), m_receive_pollfds.size(), timeoutMS);
@@ -151,7 +151,7 @@ void TxRxInstance::loop_receive_packets() {
   }
 }
 
-int TxRxInstance::loop_iter(int rx_index) {
+int WBTxRx::loop_iter(int rx_index) {
   pcap_t* ppcap=m_pcap_handles[rx_index].rx;
   // loop while incoming queue is not empty
   int nPacketsPolledUntilQueueWasEmpty = 0;
@@ -176,7 +176,7 @@ int TxRxInstance::loop_iter(int rx_index) {
   return nPacketsPolledUntilQueueWasEmpty;
 }
 
-void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
+void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
                                  const uint8_t *pkt) {
   if(m_options.log_all_received_packets){
     m_console->debug("Got packet {} {}",wlan_idx,hdr.len);
@@ -262,7 +262,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   }
 }
 
-bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,const size_t pkt_payload_size) {
+bool WBTxRx::process_received_data_packet(int wlan_idx,uint8_t radio_port,const uint8_t *pkt_payload,const size_t pkt_payload_size) {
   std::shared_ptr<std::vector<uint8_t>> decrypted=std::make_shared<std::vector<uint8_t>>(pkt_payload_size-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES);
   // nonce comes first
   auto* nonce_p=(uint64_t*) pkt_payload;
@@ -289,7 +289,7 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
   return false;
 }
 
-void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len) {
+void WBTxRx::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len) {
   if(m_output_cb!= nullptr){
     m_output_cb(nonce,wlan_index,radioPort,data,data_len);
   }
@@ -301,14 +301,14 @@ void TxRxInstance::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t r
   }
 }
 
-void TxRxInstance::start_receiving() {
+void WBTxRx::start_receiving() {
   keep_receiving= true;
   m_receive_thread=std::make_unique<std::thread>([this](){
     loop_receive_packets();
   });
 }
 
-void TxRxInstance::stop_receiving() {
+void WBTxRx::stop_receiving() {
   keep_receiving= false;
   if(m_receive_thread!= nullptr){
     if(m_receive_thread->joinable()){
@@ -318,7 +318,7 @@ void TxRxInstance::stop_receiving() {
   }
 }
 
-void TxRxInstance::announce_session_key_if_needed() {
+void WBTxRx::announce_session_key_if_needed() {
   const auto cur_ts = std::chrono::steady_clock::now();
   if (cur_ts >= m_session_key_announce_ts) {
     // Announce session key
@@ -327,7 +327,7 @@ void TxRxInstance::announce_session_key_if_needed() {
   }
 }
 
-void TxRxInstance::send_session_key() {
+void WBTxRx::send_session_key() {
   wifibroadcast::pcap_helper::AbstractWBPacket tmp{(uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES};
   Ieee80211Header tmp_hdr=mIeee80211Header;
   tmp_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
@@ -340,19 +340,19 @@ void TxRxInstance::send_session_key() {
   }
 }
 
-void TxRxInstance::tx_update_mcs_index(uint8_t mcs_index) {
+void WBTxRx::tx_update_mcs_index(uint8_t mcs_index) {
   m_console->debug("update_mcs_index {}",mcs_index);
   m_radioTapHeaderParams.mcs_index=mcs_index;
   tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::tx_update_channel_width(int width_mhz) {
+void WBTxRx::tx_update_channel_width(int width_mhz) {
   m_console->debug("update_channel_width {}",width_mhz);
   m_radioTapHeaderParams.bandwidth=width_mhz;
   tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::tx_update_stbc(int stbc) {
+void WBTxRx::tx_update_stbc(int stbc) {
   m_console->debug("update_stbc {}",stbc);
   if(stbc<0 || stbc> 3){
     m_console->warn("Invalid stbc index");
@@ -362,32 +362,32 @@ void TxRxInstance::tx_update_stbc(int stbc) {
   tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::tx_update_guard_interval(bool short_gi) {
+void WBTxRx::tx_update_guard_interval(bool short_gi) {
   m_radioTapHeaderParams.short_gi=short_gi;
   tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::tx_update_ldpc(bool ldpc) {
+void WBTxRx::tx_update_ldpc(bool ldpc) {
   m_radioTapHeaderParams.ldpc=ldpc;
   tx_threadsafe_update_radiotap_header(m_radioTapHeaderParams);
 }
 
-void TxRxInstance::tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams &params) {
+void WBTxRx::tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSelectableParams &params) {
   auto newRadioTapHeader=RadiotapHeader{params};
   std::lock_guard<std::mutex> guard(m_tx_mutex);
   m_radiotap_header = newRadioTapHeader;
 }
 
-TxRxInstance::TxStats TxRxInstance::get_tx_stats() {
+WBTxRx::TxStats WBTxRx::get_tx_stats() {
     return m_tx_stats;
 }
 
-TxRxInstance::RxStats TxRxInstance::get_rx_stats() {
-  TxRxInstance::RxStats ret=m_rx_stats;
+WBTxRx::RxStats WBTxRx::get_rx_stats() {
+  WBTxRx::RxStats ret=m_rx_stats;
   ret.curr_packet_loss=m_seq_nr_helper.get_current_loss_percent();
   return ret;
 }
 
-TxRxInstance::RxStatsPerCard TxRxInstance::get_rx_stats_for_card(int card_index) {
+WBTxRx::RxStatsPerCard WBTxRx::get_rx_stats_for_card(int card_index) {
   return m_rx_packet_stats.at(card_index);
 }

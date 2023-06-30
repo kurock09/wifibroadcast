@@ -14,7 +14,7 @@
 #include "FECDisabled2.hpp"
 #include "FECEnabled2.h"
 #include "TimeHelper.hpp"
-#include "TxRxInstance.h"
+#include "WBTxRx.h"
 
 class WBTransmitter2 {
  public:
@@ -34,7 +34,7 @@ class WBTransmitter2 {
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
   };
-  WBTransmitter2(std::shared_ptr<TxRxInstance> txrx,Options options);
+  WBTransmitter2(std::shared_ptr<WBTxRx> txrx,Options options);
   WBTransmitter2(const WBTransmitter2 &) = delete;
   WBTransmitter2 &operator=(const WBTransmitter2 &) = delete;
   ~WBTransmitter2();
@@ -77,7 +77,7 @@ class WBTransmitter2 {
   FECStats get_latest_fec_stats();
  private:
   const Options options;
-  std::shared_ptr<TxRxInstance> m_txrx;
+  std::shared_ptr<WBTxRx> m_txrx;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<FECEncoder> m_fec_encoder = nullptr;
   std::unique_ptr<FECDisabledEncoder2> m_fec_disabled_encoder = nullptr;
