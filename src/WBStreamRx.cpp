@@ -33,6 +33,11 @@ WBStreamRx::WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1)
     this->on_new_packet(nonce,wlan_index,data,data_len);
   };
   m_txrx->rx_register_specific_cb(m_options.radio_port,cb);
+  if(m_options.enable_threading){
+    m_packet_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedPacket>>>(m_options.packet_queue_size);
+    m_process_data_thread_run=true;
+    m_process_data_thread=std::make_unique<std::thread>(&WBStreamRx::loop_process_data, this);
+  }
 }
 
 void WBStreamRx::set_callback(
@@ -40,14 +45,42 @@ void WBStreamRx::set_callback(
   m_out_cb=std::move(output_data_callback);
 }
 
-
 void WBStreamRx::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *data,const std::size_t data_len) {
   m_n_input_packets++;
   m_n_input_bytes+=data_len;
-  if(m_options.enable_fec){
-    m_fec_decoder->validate_and_process_packet(data,data_len);
+  if(m_options.enable_threading){
+    auto item=std::make_shared<EnqueuedPacket>();
+    item->data=std::make_shared<std::vector<uint8_t>>(data,data+data_len);
+    const bool res= m_packet_queue->try_enqueue(item);
+    if(!res){
+      // would hint at too high cpu usage
+      m_console->warn("Cannot enqueue packet");
+    }
   }else{
-    m_fec_disabled_decoder->process_packet(data,data_len);
+    if(m_options.enable_fec){
+      m_fec_decoder->validate_and_process_packet(data,data_len);
+    }else{
+      m_fec_disabled_decoder->process_packet(data,data_len);
+    }
+  }
+}
+
+void WBStreamRx::loop_process_data() {
+  std::shared_ptr<EnqueuedPacket> packet;
+  static constexpr std::int64_t timeout_usecs=1000*1000;
+  while (m_process_data_thread_run) {
+    if (m_packet_queue->wait_dequeue_timed(packet, timeout_usecs)) {
+      process_queued_packet(*packet);
+    }
+  }
+}
+
+void WBStreamRx::process_queued_packet(const WBStreamRx::EnqueuedPacket &packet) {
+  assert(m_options.enable_threading== true);
+  if(m_options.enable_fec){
+    m_fec_decoder->validate_and_process_packet(packet.data->data(),packet.data->size());
+  }else{
+    m_fec_disabled_decoder->process_packet(packet.data->data(),packet.data->size());
   }
 }
 

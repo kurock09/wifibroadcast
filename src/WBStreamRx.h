@@ -15,6 +15,9 @@
 #include "wifibroadcast-spdlog.h"
 #include "wifibroadcast.hpp"
 
+#include "../moodycamel/concurrentqueue/blockingconcurrentqueue.h"
+#include "../moodycamel/readerwriterqueue/readerwritercircularbuffer.h"
+
 class WBStreamRx {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;
@@ -30,7 +33,9 @@ class WBStreamRx {
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
     // enable / disable multi threading (decouples the processing of data from the thread that provided the data,
     // e.g. the thread inside WBTxRx
-    //bool enable_threading= true;
+    bool enable_threading= true;
+    // only if threading is enabled
+    int packet_queue_size=20;
   };
   WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1);
   WBStreamRx(const WBStreamRx &) = delete;
@@ -77,6 +82,15 @@ class WBStreamRx {
   seq_nr::Helper m_seq_nr_helper;
   void on_new_packet(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len);
   void on_decoded_packet(const uint8_t* data,int data_len);
+  // used only if threading is enabled
+  struct EnqueuedPacket{
+    std::shared_ptr<std::vector<uint8_t>> data;
+  };
+  std::unique_ptr<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedPacket>>> m_packet_queue;
+  bool m_process_data_thread_run=true;
+  std::unique_ptr<std::thread> m_process_data_thread;
+  void loop_process_data();
+  void process_queued_packet(const EnqueuedPacket& packet);
 };
 
 #endif  // WIFIBROADCAST_WBSTREAMRX_H
