@@ -57,7 +57,7 @@ class WBStreamRx {
     uint64_t count_bytes_forwarded=0;
     MinMaxAvg<std::chrono::nanoseconds> curr_fec_decode_time{};
   };
-  FECRxStats2 get_lates_fec_stats();
+  FECRxStats2 get_latest_fec_stats();
   void reset_stream_stats();
  private:
   const Options m_options;

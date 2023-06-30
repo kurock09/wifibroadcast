@@ -69,7 +69,7 @@ WBStreamRx::Statistics WBStreamRx::get_latest_stats() {
   return ret;
 }
 
-WBStreamRx::FECRxStats2 WBStreamRx::get_lates_fec_stats() {
+WBStreamRx::FECRxStats2 WBStreamRx::get_latest_fec_stats() {
   WBStreamRx::FECRxStats2 ret;
   if(m_fec_decoder){
     auto stats=m_fec_decoder->stats;
