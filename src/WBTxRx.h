@@ -22,8 +22,11 @@
  * process received data packets.
  * Adds packet encryption and authentication via libsodium (can be disabled for
  * performance) Allows multiplexing of multiple data streams (radio_port) Quick
- * usage description by example: System 1: card 1 System 2: card 2 air in
- * between card 1 and card 2 Create an instance of WBTxRx on both system 1
+ * usage description by example:
+ * # System 1: card 1
+ * # System 2: card 2
+ * air in between card 1 and card 2
+ * Create an instance of WBTxRx on both system 1
  * and system 2 inject packets using WBTxRx on system 1 -> receive them
  * using WBTxRx on system 2 inject packets using WBTxRx on system 2
  * -> receive them using WBTxRx on system 1
