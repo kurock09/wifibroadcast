@@ -392,3 +392,7 @@ WBTxRx::RxStats WBTxRx::get_rx_stats() {
 WBTxRx::RxStatsPerCard WBTxRx::get_rx_stats_for_card(int card_index) {
   return m_rx_packet_stats.at(card_index);
 }
+
+void WBTxRx::rx_reset_stats() {
+  m_rx_stats=RxStats{};
+}

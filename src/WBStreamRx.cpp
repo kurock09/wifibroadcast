@@ -81,3 +81,9 @@ WBStreamRx::FECRxStats2 WBStreamRx::get_lates_fec_stats() {
   }
   return ret;
 }
+
+void WBStreamRx::reset_stream_stats() {
+  m_n_input_bytes=0;
+  m_n_input_packets=0;
+  m_seq_nr_helper.reset();
+}

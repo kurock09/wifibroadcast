@@ -58,6 +58,7 @@ class WBStreamRx {
     MinMaxAvg<std::chrono::nanoseconds> curr_fec_decode_time{};
   };
   FECRxStats2 get_lates_fec_stats();
+  void reset_stream_stats();
  private:
   const Options m_options;
   std::shared_ptr<WBTxRx> m_txrx;

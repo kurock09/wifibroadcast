@@ -131,6 +131,8 @@ class WBTxRx {
    TxStats get_tx_stats();
    RxStats get_rx_stats();
    RxStatsPerCard get_rx_stats_for_card(int card_index);
+   // used by openhd during frequency scan
+   void rx_reset_stats();
  private:
   const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;

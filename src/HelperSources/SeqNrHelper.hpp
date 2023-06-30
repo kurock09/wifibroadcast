@@ -30,6 +30,9 @@ class Helper{
     m_gaps.reserve(MAX_N_STORED_GAPS);
     m_curr_packet_loss=-1;
   }
+  void reset(){
+    m_last_seq_nr=-1;
+  }
   int16_t get_current_loss_percent(){
     return m_curr_packet_loss;
   }
