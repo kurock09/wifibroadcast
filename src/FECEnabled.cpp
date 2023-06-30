@@ -200,6 +200,7 @@ int RxBlock::reconstructAllMissingData() {
   // const int nMissingPrimaryFragments = m_n_primary_fragments_in_block- m_n_available_primary_fragments;
   auto recoveredFragmentIndices = fecDecode(m_size_of_secondary_fragments, blockBuffer,
                                             m_n_primary_fragments_in_block, fragment_map);
+  // now mark them as available
   for (const auto idx: recoveredFragmentIndices) {
     fragment_map[idx] = AVAILABLE;
   }

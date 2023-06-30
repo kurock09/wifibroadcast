@@ -150,9 +150,12 @@ class RxBlock {
   int getNAvailableFragments() const {
     return m_n_available_primary_fragments + m_n_available_secondary_fragments;
   }
-  // make sure to check if enough secondary fragments are available before calling this method !
-  // reconstructing only part of the missing data is not supported !
-  // return: the n of reconstructed packets
+  /**
+   * Reconstruct all missing primary fragments (data packets) by using the received secondary (FEC) packets
+   * NOTE: reconstructing only part of the missing data is not supported ! (That's a non-fixable technical detail of FEC)
+   * NOTE: Do not call this method unless it is needed
+   * @return the n of reconstructed packets
+   */
   int reconstructAllMissingData();
   [[nodiscard]] uint64_t getBlockIdx() const {
     return blockIdx;
