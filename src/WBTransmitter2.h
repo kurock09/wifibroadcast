@@ -15,7 +15,6 @@
 #include "FECEnabled2.h"
 #include "TimeHelper.hpp"
 #include "TxRxInstance.h"
-#include "WBTransmitterStats.hpp"
 
 class WBTransmitter2 {
  public:

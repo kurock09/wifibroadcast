@@ -5,29 +5,28 @@
 #ifndef WIFIBROADCAST_TXRXINSTANCE_H
 #define WIFIBROADCAST_TXRXINSTANCE_H
 
+#include <sys/poll.h>
+
 #include <atomic>
 #include <map>
 
 #include "Encryption.hpp"
+#include "RSSIForWifiCard.h"
 #include "RadiotapHeader.hpp"
-#include "RawTransmitter.hpp"
 #include "SeqNrHelper.hpp"
-#include "WBReceiverStats.hpp"
 #include "wifibroadcast.hpp"
 
 /**
  * Wraps one or more wifi card in monitor mode
  * Provides easy interface to inject data packets and register a callback to
  * process received data packets.
- * Adds packet encryption and authentication via libsodium (can be disabled for performance)
- * Allows multiplexing of multiple data streams (radio_port)
- * Quick usage description by example:
- * System 1: card 1
- * System 2: card 2
- * air in between card 1 and card 2
- * Create an instance of TxRxInstance on both system 1 and system 2
- * inject packets using TxRxInstance on system 1 -> receive them using TxRxInstance on system 2
- * inject packets using TxRxInstance on system 2 -> receive them using TxRxInstance on system 1
+ * Adds packet encryption and authentication via libsodium (can be disabled for
+ * performance) Allows multiplexing of multiple data streams (radio_port) Quick
+ * usage description by example: System 1: card 1 System 2: card 2 air in
+ * between card 1 and card 2 Create an instance of TxRxInstance on both system 1
+ * and system 2 inject packets using TxRxInstance on system 1 -> receive them
+ * using TxRxInstance on system 2 inject packets using TxRxInstance on system 2
+ * -> receive them using TxRxInstance on system 1
  */
 class TxRxInstance {
  public:

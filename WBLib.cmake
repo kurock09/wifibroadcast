@@ -26,11 +26,8 @@ target_sources(wifibroadcast PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/src/external/radiotap/radiotap.c
         ${CMAKE_CURRENT_LIST_DIR}/src/external/fec/fec_base.cpp
         # the couple of non-header-only files for wifibroadcast
-        ${CMAKE_CURRENT_LIST_DIR}/src/WBReceiver.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/WBReceiver2.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/WBTransmitter.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/WBTransmitter2.cpp
-        ${CMAKE_CURRENT_LIST_DIR}/src/ForeignPacketsReceiver.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/TxRxInstance.cpp
         )
 target_include_directories(wifibroadcast PUBLIC

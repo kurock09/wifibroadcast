@@ -6,7 +6,7 @@
 
 #include <utility>
 
-#include "RawReceiver.hpp"
+#include "pcap_helper.h"
 
 TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
     : m_options(options1),
@@ -21,8 +21,8 @@ TxRxInstance::TxRxInstance(std::vector<std::string> wifi_cards,Options options1)
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};
-    pcapTxRx.rx=RawReceiverHelper::helper_open_pcap_rx(wifi_card);
-    pcapTxRx.tx=RawTransmitterHelper::openTxWithPcap(wifi_card);
+    pcapTxRx.rx=wifibroadcast::pcap_helper::open_pcap_rx(wifi_card);
+    pcapTxRx.tx=wifibroadcast::pcap_helper::open_pcap_tx(wifi_card);
     if(m_options.set_direction){
       pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
     }
@@ -181,7 +181,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   if(m_options.log_all_received_packets){
     m_console->debug("Got packet {} {}",wlan_idx,hdr.len);
   }
-  const auto parsedPacket = RawReceiverHelper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
+  const auto parsedPacket = wifibroadcast::pcap_helper::processReceivedPcapPacket(hdr, pkt, m_options.rtl8812au_rssi_fixup);
   if (parsedPacket == std::nullopt) {
     if(m_options.advanced_debugging_rx){
       m_console->warn("Discarding packet due to pcap parsing error!");
@@ -246,7 +246,7 @@ void TxRxInstance::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       auto &this_wifi_card_stats = m_rx_packet_stats.at(wlan_idx);
       auto& rssi_for_this_card=this_wifi_card_stats.rssi_for_wifi_card;
       //m_console->debug("{}",all_rssi_to_string(parsedPacket->allAntennaValues));
-      const auto best_rssi=RawReceiverHelper::get_best_rssi_of_card(parsedPacket->allAntennaValues);
+      const auto best_rssi=wifibroadcast::pcap_helper::get_best_rssi_of_card(parsedPacket->allAntennaValues);
       //m_console->debug("best_rssi:{}",(int)best_rssi);
       if(best_rssi.has_value()){
         rssi_for_this_card.addRSSI(best_rssi.value());
@@ -328,10 +328,10 @@ void TxRxInstance::announce_session_key_if_needed() {
 }
 
 void TxRxInstance::send_session_key() {
-  AbstractWBPacket tmp{(uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES};
+  wifibroadcast::pcap_helper::AbstractWBPacket tmp{(uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES};
   Ieee80211Header tmp_hdr=mIeee80211Header;
   tmp_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
-  auto session_key_packet=RawTransmitterHelper::createRadiotapPacket(m_radiotap_header,tmp_hdr,tmp);
+  auto session_key_packet=wifibroadcast::pcap_helper::createRadiotapPacket(m_radiotap_header,tmp_hdr,tmp);
   pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
   const auto len_injected=pcap_inject(tx, session_key_packet.data(),session_key_packet.size());
   if (len_injected != (int) session_key_packet.size()) {

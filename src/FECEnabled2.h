@@ -16,10 +16,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <optional>
 
 #include "FEC.hpp"
 #include "HelperSources/TimeHelper.hpp"
-#include "WBReceiverStats.hpp"
 #include "wifibroadcast-spdlog.h"
 
 static_assert(__BYTE_ORDER == __LITTLE_ENDIAN, "This code is written for little endian only !");
@@ -589,6 +589,20 @@ class FECDecoder {
     }
   }
  public:
+  // matches FECDecoder
+  struct FECRxStats {
+    // total block count
+    uint64_t count_blocks_total = 0;
+    // a block counts as "lost" if it was removed before being fully received or recovered
+    uint64_t count_blocks_lost = 0;
+    // a block counts as "recovered" if it was recovered using FEC packets
+    uint64_t count_blocks_recovered = 0;
+    // n of primary fragments that were reconstructed during the recovery process of a block
+    uint64_t count_fragments_recovered = 0;
+    // n of forwarded bytes
+    uint64_t count_bytes_forwarded=0;
+    MinMaxAvg<std::chrono::nanoseconds> curr_fec_decode_time{};
+  };
   FECRxStats stats{};
 };
 
