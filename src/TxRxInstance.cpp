@@ -92,7 +92,8 @@ void TxRxInstance::tx_inject_packet(const uint8_t radioPort,
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
     wifibroadcast::log::get_default()->warn("pcap -unable to inject packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
   }else{
-    m_tx_stats.n_injected_bytes++;
+    m_tx_stats.n_injected_bytes+=packet_size;
+    m_tx_stats.n_injected_packets++;
   }
   announce_session_key_if_needed();
 }
