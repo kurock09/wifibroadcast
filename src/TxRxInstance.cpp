@@ -285,7 +285,7 @@ bool TxRxInstance::process_received_data_packet(int wlan_idx,uint8_t radio_port,
     }
     return true;
   }
-  m_console->debug("Got non-wb packet {}",radio_port);
+  //m_console->debug("Got non-wb packet {}",radio_port);
   return false;
 }
 
