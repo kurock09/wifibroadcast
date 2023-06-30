@@ -54,7 +54,7 @@ static std::string timeSamplesAsString(const std::vector<std::chrono::nanosecond
   }
   return ss.str();
 }
-std::chrono::system_clock::time_point
+static std::chrono::system_clock::time_point
 to_time_point_system_clock(timeval tv){
   using namespace std::chrono;
   return system_clock::time_point{seconds{tv.tv_sec} + microseconds{tv.tv_usec}};
