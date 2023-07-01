@@ -19,7 +19,9 @@
  * ! IN THIS EXAMPLE, IF FEC IS ENABLED, 8 UDP PACKETS ARE BUFFERED BEFORE FORWARDING !
  *
  * NOTE: This example does not support running another instance of it simultaneously - if you want to do multiplexing,
- * do it in c++ code, you cannot do it via shell anymore !
+ * do it in c++ code, you cannot do it via shell anymore ! This might be harder to start with, but gives a lot of advantages,
+ * like easier debugging (only debug one single application, not 100s of open terminals), and tither control over packet queues / less latency
+ * due to no UDP.
  *
  * When run as air: Expects UDP data on port 5600
  * When run as ground: Forwards UDP data to port 5601
@@ -78,13 +80,18 @@ int main(int argc, char *const *argv) {
     // we need to buffer packets due to udp
     std::vector<std::shared_ptr<std::vector<uint8_t>>> block;
     static constexpr auto M_FEC_K=8;
-    auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms](const uint8_t *payload, const std::size_t payloadSize){
+    auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms,&enable_fec](const uint8_t *payload, const std::size_t payloadSize){
       last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
-      auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
-      block.push_back(packet);
-      if(block.size()==M_FEC_K){
-        wb_tx->try_enqueue_block(block,100,20);
-        block.resize(0);
+      if(enable_fec){
+        auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
+        block.push_back(packet);
+        if(block.size()==M_FEC_K){
+          wb_tx->try_enqueue_block(block,100,20);
+          block.resize(0);
+        }
+      }else{
+        auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
+        wb_tx->try_enqueue_packet(packet);
       }
     };
     std::unique_ptr<SocketHelper::UDPReceiver> m_udp_in=std::make_unique<SocketHelper::UDPReceiver>(
