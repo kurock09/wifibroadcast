@@ -39,7 +39,7 @@ int main(int argc, char *const *argv) {
       default: /* '?' */
       show_usage:
         fprintf(stderr,
-                "Example hello %s [-a run as air] [-g run as ground] [-w wifi card to use] ...\n",
+                "Example hello %s [-a run as air] [-g run as ground] [-w wifi card to use]\n",
                 argv[0]);
         exit(1);
     }
