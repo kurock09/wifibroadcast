@@ -17,7 +17,7 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 #include "../src/HelperSources/SchedulingHelper.hpp"
-#include "../src/FECEnabled.hpp"
+#include "../src/FECEnabled.h"
 #include "../src/Encryption.hpp"
 #include "../src/HelperSources/RandomBufferPot.hpp"
 #include "../src/HelperSources/Benchmark.hpp"
