@@ -33,7 +33,7 @@ struct FECDisabledHeader{
 static_assert(sizeof(FECDisabledHeader)==8);
 
 // usage of nonce: Simple, uint64_t number increasing with each packet
-class FECDisabledEncoder2 {
+class FECDisabledEncoder {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)>
       OUTPUT_DATA_CALLBACK;
@@ -56,7 +56,7 @@ class FECDisabledEncoder2 {
   uint64_t currPacketIndex = 0;
 };
 
-class FECDisabledDecoder2 {
+class FECDisabledDecoder {
  public:
   typedef std::function<void(const uint8_t *payload, std::size_t payloadSize)> SEND_DECODED_PACKET;
   // WARNING: Don't forget to register this callback !

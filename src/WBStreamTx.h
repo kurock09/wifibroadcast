@@ -83,7 +83,7 @@ class WBStreamTx {
   std::shared_ptr<spdlog::logger> m_console;
   // On the tx, either one of those two is active at the same time
   std::unique_ptr<FECEncoder> m_fec_encoder = nullptr;
-  std::unique_ptr<FECDisabledEncoder2> m_fec_disabled_encoder = nullptr;
+  std::unique_ptr<FECDisabledEncoder> m_fec_disabled_encoder = nullptr;
   // We have two data queues with a slightly different layout (depending on the selected operating mode)
   struct EnqueuedPacket {
     std::chrono::steady_clock::time_point enqueue_time_point=std::chrono::steady_clock::now();

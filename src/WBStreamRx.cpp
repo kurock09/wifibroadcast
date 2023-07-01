@@ -23,7 +23,7 @@ WBStreamRx::WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1)
     };
     m_fec_decoder->mSendDecodedPayloadCallback = cb;
   }else{
-    m_fec_disabled_decoder = std::make_unique<FECDisabledDecoder2>();
+    m_fec_disabled_decoder = std::make_unique<FECDisabledDecoder>();
     auto cb=[this](const uint8_t *data, int data_len){
       on_decoded_packet(data,data_len);
     };
