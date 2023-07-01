@@ -96,6 +96,7 @@ int main(int argc, char *const *argv) {
     };
     wb_rx->set_callback(cb);
     txrx->start_receiving();
+    std::cout<<"Sending data to localhost:5600\n";
   }
   auto lastLog=std::chrono::steady_clock::now();
   while (true){
