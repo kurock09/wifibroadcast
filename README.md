@@ -1,68 +1,38 @@
-## Note 21.07.2022
-While the wfb_tx / wfb_rx main executables still exist, as of now, OpenHD uses the WBReceiver.h / WBTransmitter.h directly in c++,making
-them obsolete.
+# Summary
+c++ Library for wifibroadcast video and telemetry streaming. \
+FEATURES: 
+1) Multiplexing and bidirectional streaming
+2) Zero latency overhead FEC video streaming (requires usage of c++)
+3) SIMD accelerated FEC (NEON on ARM, SSSE3 on x86)
+4) Advanced debugging and statistics
+5) Simple examples to get started
+6) Basic unit tests for FEC
 
-## Summary
-This code originated from https://github.com/svpcom/wifibroadcast  
-It was re-written in c++ with the intention to reduce latency, improve syntax, improve documentation 
-and modularize the FEC Enc/Dec and Encryption/Decryption part. (represented by FECEncoder/Decoder and Encryptor/Decryptor now).
-By doing so I was able to reduce latency quite a lot (even though the fix was one line of code in the end) and
-write simple unit tests that don't require a wifi card.
-I also added some new features,listed:
-#### 1) variable block size:
-Allow different block size(s) on consecutive fec blocks in a data stream (in contrast to specifying the block size once at startup, but then not changing
-it in the same session).
-If you are transmitting h264,h265 or mjpeg video,each frame might consist of a varying number of rtp-fragments.
-Encoding each frame in one FEC block (or more than 1 FEC block if the n of sub-fragments in this frame is too high)
-Eliminates the issue of a possible stuck frame if FEC needs to be applied, and can increase resiliency against packet loss
-(since we now can do bigger blocks than before and the scenario where one block contains parts of the previous and current frame cannot happen anymore).
-In the future, we could also do things like protecting key frames more than other frames or similar.
-#### 2) disable FEC:
-For telemetry or RC data, FEC doesn't really make sense. By disabling FEC you get the same properties as "true UDP".
-#### 3) simplified settings:
-The tx and rx pipeline only have to match on the radio_port, the rest is done automatically
+# Getting started
+## Compiling
+run sudo ./install_dep.sh \
+Compile with cmake (./build_cmake.sh)
 
-## Notable parameter changes:
--p is now the percentage of FEC packets (previosuly radio_port) and -r is now the radio_port   
-This means, for a fixed block length, you don't have to supply k:n anymore, but rather -k (number of data packets per block) and -p (fec percentage).
-The tx is going to print this input in "old" k:n terms for you.
-   
-## Example pipelines
-### 1) Transmitting rtp encapsulated h264/h265/mjpeg video:
-**./wfb_tx -k h264 -p 50**\
-This reads as follow: variable block length for rtp h264 video,with an overhead of
-FEC packets of 50% (if your input stream is 20MBit/s, the used bandwidth is going to be ~30MBit/s)
-### 2) Fixed block length (for whatever reason):
-**./wfb_tx -k 8 -p 50**\
-This reads as follow: fixed block length where each block contains 8 data packets and 8*50/100= 4 fec packets.   
-In "old k:n terms" this would be 8:12   
-### 3) FEC disabled (udp-like) for telemetry (use only if your upper level deals with packet re-ordering, like mavlink):
-**./wfb_tx -k 0**
-   
+## Examples
+NOTE: You need to first enable monitor mode on your card(s) and the card driver
+needs to support active and passive monitor mode (listening & injecting packets)
+1) example_hello: [link](https://github.com/OpenHD/wifibroadcast/blob/master/executables/benchmark_fec.cpp) \
+    Bidirectional communication between air and ground unit 
+2) benchmark_fec: [link](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/executables/example_hello.cpp) \
+    Gives a quick overview over FEC performance on your platform 
+3) example_udp: [link](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/executables/example_udp.cpp) \
+    Simple unidirectional UDP streaming application, can be used for
+    rapid development and shows how you could create your own WB link with 
+    multiple unidirectional / bidirectional streams 
+### For a more practical application, please check out OpenHD EVO !
+[Project](https://github.com/OpenHD/OpenHD/blob/2.3-evo/OpenHD/ohd_interface/inc/wb_link.h#L31)
 
-## Information about using -k 0 or -k 1:
-1) If tx uses -k 0 the rx forwards packets without duplicates but with possible packet re-ordering due to multiple wifi cards. Aka "just as you'd expect from UDP" but no duplicates to save bandwidth as soon as possible (if the upper level does re-sending of the same packets, for the lower wb level this is just a new packet, to not confuse anybody here, that'l still work).
-2) If tx uses -k 1 and -p 100 (for exampe) this degenerates to "sending each packet twice" and the output on rx is going to be in-order, zero latency, but more than one rx card won't have a benificial effect
-3) With -k>1 and -p anything the rx behaves just as you are used from svpcom-wifibroadcast. Just be aware that the -p value is an integer,
-and "weird" -k -p combinations are rounded to the nearest integer (look at tx output in terminal)
-   
-## Information about encryption:
-The encryption part serves 2 purposes: On the one hand,it encrypt the packets. On the other hand, it also "validates" packets. If the user-generated keys on the rx and tx do not match, the rx won't forward any packets. This can be used to basically "bind" one air pi to one ground pi.
+[Link implementation](https://github.com/OpenHD/OpenHD/blob/2.3-evo/OpenHD/ohd_interface/inc/wb_link.h#L31)
 
-## Overhead
-If the link is not active (e.g. no data is feed into the tx) this layer does not send any packets (not even the session key packets). The used wifi bitrate is 0 in this case.
-If the link is active (e.g. data is fed into the tx) the packet overhead is one packet every SESSION_KEY_ANNOUNCE_DELTA ms, 1+8+2=11 bytes per data packet, and -p % more packets.
-If you don't need to be exact,just assume that the overhead is -p percent.
-
-## Where to set FEC_K or FEC_PERCENTAGE
-Only needs to be set on tx, rx configures itself automatically
-
-### Building wfb_tx and wfb_rx
-run sudo ./install_dep.sh
-then 
-run ./build_cmake.sh
-
-### Building / using the test program
-go into latencyTesting/SimpleTestProgram\
-Then run make\
-You can now loopUntilError the tx on one card, the rx on another card and use the test program to measure throughput,latency,packet loss and more.
+### Pre unify tx / rx
+The design principle of running multiple instances of an application (e.g. wifibroadcast tx / rx)
+has a couple of disadvantages. 
+It makes debugging quite hard (you now have multiple applications for video tx, video rx, and telemetry tx, telemetry rx),
+makes threading and sequencing harder and also increases latency on the tx with the udp & rtp approach.
+Doing more in c++ and less scripting makes it easy to solve those issues.
+However, if you want to use scripting / udp badly, checkout [pre-unify-tx-rx](https://github.com/OpenHD/wifibroadcast/tree/pre-unify-tx-rx)
