@@ -140,8 +140,7 @@ int main(int argc, char *const *argv) {
         lastLog=std::chrono::steady_clock::now();
         auto rxStats=txrx->get_rx_stats();
         auto rssi=txrx->get_rx_stats_for_card(0);
-        std::cout<<rxStats<<std::endl;
-        std::cout<<"RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<std::endl;
+        std::cout<<rxStats<<" RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<std::endl;
       }
     }
   }

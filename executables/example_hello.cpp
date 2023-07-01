@@ -81,9 +81,8 @@ int main(int argc, char *const *argv) {
       auto txStats=txrx->get_tx_stats();
       auto rxStats=txrx->get_rx_stats();
       auto rssi=txrx->get_rx_stats_for_card(0);
-      std::cout<<txStats<<"\n";
-      std::cout<<rxStats<<"\n";
-      std::cout<<"RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<"\n";
+      std::cout<<txStats<<std::endl;
+      std::cout<<rxStats<<" RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<std::endl;
     }
   }
 }
