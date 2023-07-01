@@ -55,13 +55,14 @@ int main(int argc, char *const *argv) {
 
   WBTxRx::OUTPUT_DATA_CALLBACK cb=[](uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len){
     std::string message((const char*)data,data_len);
-    std::cout<<message;
+    fmt::print("Got packet[{}]",message);
   };
+  txrx->rx_register_callback(cb);
 
   auto lastLog=std::chrono::steady_clock::now();
   int packet_index=0;
   while (true){
-    auto message=is_air ? fmt::format("Air says hello {}\n",packet_index) : fmt::format("Ground says hello {}\n",packet_index);
+    auto message=is_air ? fmt::format("Air says hello {}",packet_index) : fmt::format("Ground says hello {}",packet_index);
 
     // Just use radio port 0 - we don't need multiplexing in this example
     // This message is injected on the wifi card
@@ -69,7 +70,7 @@ int main(int argc, char *const *argv) {
 
     std::this_thread::sleep_for(std::chrono::milliseconds (1000));
     const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
-    if(elapsed_since_last_log>std::chrono::seconds(1)){
+    if(elapsed_since_last_log>std::chrono::seconds(4)){
       lastLog=std::chrono::steady_clock::now();
       auto txStats=txrx->get_tx_stats();
       auto rxStats=txrx->get_rx_stats();
