@@ -211,12 +211,14 @@ class WBTxRx {
 };
 
 static std::ostream& operator<<(std::ostream& strm, const WBTxRx::TxStats& data){
-  auto tmp=fmt::format("WBTxRx::TxStats[injected packets:bytes {}:{}, tx errors:{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint);
+  auto tmp=fmt::format("TxStats[injected packets:{} bytes:{} tx errors:{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint,);
   strm<<tmp;
   return strm;
 }
 static std::ostream& operator<<(std::ostream& strm, const WBTxRx::RxStats& data){
-  auto tmp=fmt::format("WBTxRx::RxStats[any:valid={}:{},Loss:{}]",data.count_p_any,data.count_p_valid,data.curr_packet_loss);
+  auto tmp=fmt::format("RxStats[packets any:{} session{} decrypted:{} Loss:{} pps:{} bps:{}]",
+                         data.count_p_any,data.n_received_valid_session_key_packets,data.count_p_valid,
+                         data.curr_packet_loss,data.curr_packets_per_second,data.curr_bytes_per_second);
   strm<<tmp;
   return strm;
 }
