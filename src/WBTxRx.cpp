@@ -240,6 +240,12 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
     if (m_decryptor->onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData)) {
       m_console->debug("Initializing new session.");
       m_rx_stats.n_received_valid_session_key_packets++;
+      for(auto& handler:m_rx_handlers){
+        auto opt_cb_session=handler.second->cb_session;
+        if(opt_cb_session){
+          opt_cb_session();
+        }
+      }
     }
   }else{
     // the payload needs to include at least the nonce, the encryption suffix and 1 byte of actual payload

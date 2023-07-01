@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <map>
+#include <utility>
 
 #include "Encryption.hpp"
 #include "RSSIForWifiCard.hpp"
@@ -81,10 +82,9 @@ class WBTxRx {
   struct StreamRxHandler{
     uint8_t radio_port; // For which multiplexed stream this handles events
     SPECIFIC_OUTPUT_DATA_CB cb_packet; // called every time a packet for this stream is received
-    NEW_SESSION_CB cb_session; // called every time a new session is detecetd
-    //StreamRxHandler()=default;
+    NEW_SESSION_CB cb_session; // called every time a new session is detected
     StreamRxHandler(uint8_t radio_port1,SPECIFIC_OUTPUT_DATA_CB cb_packet1,NEW_SESSION_CB cb_session1)
-    :radio_port(radio_port1),cb_packet(cb_packet1),cb_session(cb_session1){}
+    :radio_port(radio_port1),cb_packet(std::move(cb_packet1)),cb_session(std::move(cb_session1)){}
   };
   void rx_register_stream_handler(std::shared_ptr<StreamRxHandler> handler);
   void rx_unregister_stream_handler(uint8_t radio_port);
