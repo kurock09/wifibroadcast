@@ -18,6 +18,11 @@
 #include "../moodycamel/concurrentqueue/blockingconcurrentqueue.h"
 #include "../moodycamel/readerwriterqueue/readerwritercircularbuffer.h"
 
+/**
+ * Receiver for a (multiplexed) wifbroadcast stream
+ * uses WBTxRx
+ * supports enabling / disabling FEC and more
+ */
 class WBStreamRx {
  public:
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)> OUTPUT_DATA_CALLBACK;

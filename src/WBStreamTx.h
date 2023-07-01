@@ -16,6 +16,11 @@
 #include "TimeHelper.hpp"
 #include "WBTxRx.h"
 
+/**
+ * Transmitter for a (multiplexed) wifbroadcast stream
+ * uses WBTxRx
+ * supports enabling / disabling FEC and more
+ */
 class WBStreamTx {
  public:
   struct Options {
