@@ -405,6 +405,8 @@ void FECDecoder::process_with_rx_queue(const FECPayloadHdr& header,
 }
 
 void FECDecoder::reset_rx_queue() {
-  auto block=rxQueuePopFront()
-  while (blo)
+  while (auto el=rx_queue.front() != nullptr){
+    rxQueuePopFront();
+  }
+  last_known_block=((uint64_t) -1);
 }
