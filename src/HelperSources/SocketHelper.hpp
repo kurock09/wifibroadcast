@@ -263,7 +263,6 @@ class UDPReceiver {
         if(receiving){
           wifibroadcast::log::get_default()->warn("Got message length of: {}",message_length);
         }
-        receiving = false;
       }
     }
     wifibroadcast::log::get_default()->debug("UDP end");
@@ -297,6 +296,7 @@ class UDPReceiver {
       wifibroadcast::log::get_default()->warn("Receiver thread is already running or has not been properly stopped");
       return;
     }
+    receiving= true;
     receiverThread = std::make_unique<std::thread>(&UDPReceiver::loopUntilError, this);
   }
   void stopBackground() {

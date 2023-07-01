@@ -82,6 +82,16 @@ int main(int argc, char *const *argv) {
         SocketHelper::ADDRESS_LOCALHOST,5600,cb_udp_in);
     m_udp_in->runInBackground();
     std::cout<<"Expecting data on localhost:5600\n";
+    auto lastLog=std::chrono::steady_clock::now();
+    while (true){
+      std::this_thread::sleep_for(std::chrono::milliseconds (500));
+      const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
+      if(elapsed_since_last_log>std::chrono::seconds(1)){
+        lastLog=std::chrono::steady_clock::now();
+        auto txStats=txrx->get_tx_stats();
+        std::cout<<txStats<<"\n";
+      }
+    }
   }else{
     std::unique_ptr<SocketHelper::UDPForwarder> m_udp_out=std::make_unique<SocketHelper::UDPForwarder>(
         SocketHelper::ADDRESS_LOCALHOST,5601);
@@ -98,17 +108,12 @@ int main(int argc, char *const *argv) {
     wb_rx->set_callback(cb);
     txrx->start_receiving();
     std::cout<<"Sending data to localhost:5600\n";
-  }
-  auto lastLog=std::chrono::steady_clock::now();
-  while (true){
-    std::this_thread::sleep_for(std::chrono::milliseconds (500));
-    const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
-    if(elapsed_since_last_log>std::chrono::seconds(1)){
-      lastLog=std::chrono::steady_clock::now();
-      if(is_air){
-        auto txStats=txrx->get_tx_stats();
-        std::cout<<txStats<<"\n";
-      }else{
+    auto lastLog=std::chrono::steady_clock::now();
+    while (true){
+      std::this_thread::sleep_for(std::chrono::milliseconds (500));
+      const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
+      if(elapsed_since_last_log>std::chrono::seconds(1)){
+        lastLog=std::chrono::steady_clock::now();
         auto rxStats=txrx->get_rx_stats();
         auto rssi=txrx->get_rx_stats_for_card(0);
         std::cout<<rxStats<<"\n";
