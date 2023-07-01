@@ -14,9 +14,9 @@
  * Simple example application that uses UDP as data input / output
  * Feed in udp packets on air -> get out udp packets on ground
  *
- * NOTE: The input stream is protected by FEC - but this serves only demo purposes here
- * For proper usage of FEC during wifibroadcast streaming (no latency overhead), please check out openhd.
- * ! IN THIS EXAMPLE, 8 UDP PACKETS ARE BUFFERED BEFORE FORWARDING !
+ * NOTE: The input stream can be protected by FEC - but this serves only demo purposes here
+ * For proper usage of FEC during wifibroadcast video streaming (no latency overhead), please check out openhd.
+ * ! IN THIS EXAMPLE, IF FEC IS ENABLED, 8 UDP PACKETS ARE BUFFERED BEFORE FORWARDING !
  *
  * NOTE: This example does not support running another instance of it simultaneously - if you want to do multiplexing,
  * do it in c++ code, you cannot do it via shell anymore !
@@ -28,8 +28,9 @@ int main(int argc, char *const *argv) {
   std::string card="wlxac9e17596103";
   bool pcap_setdirection= true;
   bool is_air= false;
+  bool enable_fec= false;
   int opt;
-  while ((opt = getopt(argc, argv, "w:agd")) != -1) {
+  while ((opt = getopt(argc, argv, "w:agdf")) != -1) {
     switch (opt) {
       case 'w':
         card = optarg;
@@ -40,13 +41,16 @@ int main(int argc, char *const *argv) {
       case 'g':
         is_air= false;
         break ;
+      case 'f':
+        enable_fec= true;
+        break ;
       case 'd':
         pcap_setdirection= false;
         break ;
       default: /* '?' */
       show_usage:
         fprintf(stderr,
-                "Example hello %s [-a run as air] [-g run as ground] [-w wifi card to use] ...\n",
+                "Example hello %s [-a run as air] [-g run as ground] [-f enable fec (default off),NEEDS TO MATCH on air / ground ] [-w wifi card to use] ...\n",
                 argv[0]);
         exit(1);
     }
@@ -65,7 +69,6 @@ int main(int argc, char *const *argv) {
 
   if(is_air){
     // UDP in and inject packets
-    const bool enable_fec= true;
     WBStreamTx::Options options_tx{};
     options_tx.radio_port=10;
     options_tx.enable_fec= enable_fec;
@@ -88,7 +91,9 @@ int main(int argc, char *const *argv) {
         SocketHelper::ADDRESS_LOCALHOST,5600,cb_udp_in);
     m_udp_in->runInBackground();
     console->info("Expecting data on localhost:5600");
-    console->warn("This buffers {} packets on udp in !",M_FEC_K);
+    if(enable_fec){
+      console->warn("This buffers {} packets on udp in !",M_FEC_K);
+    }
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
@@ -110,7 +115,7 @@ int main(int argc, char *const *argv) {
     // listen for packets and udp out
     WBStreamRx::Options options_rx{};
     options_rx.radio_port=10;
-    options_rx.enable_fec= true;
+    options_rx.enable_fec= enable_fec;
     std::unique_ptr<WBStreamRx> wb_rx=std::make_unique<WBStreamRx>(txrx,options_rx);
     auto console=wifibroadcast::log::create_or_get("out_cb");
     auto cb=[&console,&m_udp_out](const uint8_t *payload, const std::size_t payloadSize){
