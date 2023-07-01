@@ -65,67 +65,34 @@ static std::size_t N_ALLOCATED_BUFFERS = 1024;
 
 void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
   assert(options.benchmarkType == FEC_ENCODE);
-  const auto testPackets =
-	  GenericHelper::createRandomDataBuffers(N_ALLOCATED_BUFFERS, options.PACKET_SIZE, options.PACKET_SIZE);
-  FECEncoder encoder(options.FEC_K, options.FEC_PERCENTAGE);
-  const auto cb = [](const uint64_t nonce, const uint8_t *payload, std::size_t payloadSize)mutable {
-	// do nothing here. Let's hope the compiler doesn't notice.
-  };
-  encoder.outputDataCallback = cb;
-  //
+
+  std::vector<std::vector<std::shared_ptr<std::vector<uint8_t>>>> fragments_list_in;
+  for(int i=0;i<100;i++){
+      auto fragments=GenericHelper::createRandomDataBuffers_shared(options.FEC_K,options.PACKET_SIZE,options.PACKET_SIZE);
+      fragments_list_in.push_back(fragments);
+  }
+  FECEncoder encoder{};
   PacketizedBenchmark packetizedBenchmark("FEC_ENCODE", (100 + options.FEC_PERCENTAGE) / 100.0f);
   DurationBenchmark durationBenchmark("FEC_BLOCK_ENCODE", options.PACKET_SIZE * options.FEC_K);
+  const auto cb = [&packetizedBenchmark](const uint8_t* packet,int packet_len)mutable {
+    // do nothing here. Let's hope the compiler doesn't notice.
+    packetizedBenchmark.doneWithPacket(packet_len);
+  };
+  encoder.outputDataCallback = cb;
   const auto testBegin = std::chrono::steady_clock::now();
   packetizedBenchmark.begin();
   // run the test for X seconds
   while ((std::chrono::steady_clock::now() - testBegin) < std::chrono::seconds(options.benchmarkTimeSeconds)) {
-	for (const auto &packet: testPackets) {
-	  durationBenchmark.start();
-	  bool fecPerformed = encoder.encodePacket(packet.data(), packet.size());
-	  if (fecPerformed) {
-		durationBenchmark.stop();
-	  }
-	  packetizedBenchmark.doneWithPacket(packet.size());
-	}
+      for (const auto &fragments: fragments_list_in) {
+          durationBenchmark.start();
+          const auto n_secondary= calculate_n_secondary_fragments(fragments.size(),options.FEC_PERCENTAGE);
+          encoder.encode_block(fragments,n_secondary);
+          durationBenchmark.stop();
+      }
   }
   packetizedBenchmark.end();
   durationBenchmark.print();
   //printDetail();
-}
-
-// NOTE: benchmarking the fec_decode step is not easy, since FEC is only performed if there are missing packets
-// TODO do properly
-void benchmark_fec_decode(const Options &options) {
-  // init encoder and decoder, link the callback
-  FECEncoder encoder(options.FEC_K, options.FEC_PERCENTAGE);
-  auto testPacketsAfterEncode = std::list<std::pair<uint64_t, std::vector<uint8_t>>>();
-  const auto encoderCb =
-	  [&testPacketsAfterEncode](const uint64_t nonce, const uint8_t *payload, const std::size_t payloadSize)mutable {
-		testPacketsAfterEncode.push_back(std::make_pair(nonce, std::vector<uint8_t>(payload, payload + payloadSize)));
-	  };
-  encoder.outputDataCallback = encoderCb;
-  const auto testPackets =
-	  GenericHelper::createRandomDataBuffers(N_ALLOCATED_BUFFERS, options.PACKET_SIZE, options.PACKET_SIZE);
-  for (const auto &packet: testPackets) {
-	encoder.encodePacket(packet.data(), packet.size());
-  }
-
-  FECDecoder decoder{10};
-  const auto decoderCb = [](const uint8_t *payload, std::size_t payloadSize)mutable {
-	// do nothing here. Let's hope the compiler doesn't notice.
-  };
-  decoder.mSendDecodedPayloadCallback = decoderCb;
-  PacketizedBenchmark packetizedBenchmark("FEC_ENCODE", 1.0);
-  const auto testBegin = std::chrono::steady_clock::now();
-  packetizedBenchmark.begin();
-  while ((std::chrono::steady_clock::now() - testBegin) < std::chrono::seconds(options.benchmarkTimeSeconds)) {
-
-	for (auto &encodedPacket: testPacketsAfterEncode) {
-	  decoder.validateAndProcessPacket(encodedPacket.first, encodedPacket.second);
-	  packetizedBenchmark.doneWithPacket(encodedPacket.second.size());
-	}
-  }
-  packetizedBenchmark.end();
 }
 
 // TODO: implement decryption benchmark

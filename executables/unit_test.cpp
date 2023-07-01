@@ -34,8 +34,6 @@
 
 // Simple unit testing for the FEC lib that doesn't require wifi cards
 
-using namespace bla;
-
 namespace TestFEC {
 
 // Chooses randomly
@@ -60,8 +58,8 @@ static void test_random_bs_fs_overhead_dropped(){
     //wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped with {} fragments",fragmented_frame.size());
     fragmented_frames_in.push_back(fragmented_frame);
   }
-  bla::FECEncoder encoder{};
-  bla::FECDecoder decoder{10};
+  FECEncoder encoder{};
+  FECDecoder decoder{10};
   std::vector<std::vector<uint8_t>> testOut;
   // The indices of packets we shall drop
   std::vector<unsigned int> curr_indices_of_packets_to_drop{};

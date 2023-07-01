@@ -116,6 +116,19 @@ static std::vector<std::vector<uint8_t>> createRandomDataBuffers(const std::size
   }
   return buffers;
 }
+static std::vector<std::shared_ptr<std::vector<uint8_t>>> createRandomDataBuffers_shared(const std::size_t nBuffers,
+                                                                 const std::size_t minSizeB,
+                                                                 const std::size_t maxSizeB) {
+  assert(minSizeB >= 0);
+  std::vector<std::shared_ptr<std::vector<uint8_t>>> buffers;
+  for (std::size_t i = 0; i < nBuffers; i++) {
+    auto buf=GenericHelper::createRandomDataBuffer(minSizeB,maxSizeB);
+    auto buf_shared=std::make_shared<std::vector<uint8_t>>(buf.begin(),buf.end());
+    buffers.push_back(buf_shared);
+  }
+  return buffers;
+}
+
 template<std::size_t size>
 static std::vector<std::array<uint8_t, size>> createRandomDataBuffers(const std::size_t nBuffers) {
   std::vector<std::array<uint8_t, size>> ret(nBuffers);
