@@ -208,4 +208,15 @@ class WBTxRx {
   void on_valid_packet(uint64_t nonce,int wlan_index,uint8_t radioPort,const uint8_t *data, std::size_t data_len);
 };
 
+static std::ostream& operator<<(std::ostream& strm, const WBTxRx::TxStats& data){
+  auto tmp=fmt::format("WBTxRx::TxStats[{},{},{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint);
+  strm<<tmp;
+  return strm;
+}
+static std::ostream& operator<<(std::ostream& strm, const WBTxRx::RxStats& data){
+  auto tmp=fmt::format("WBTxRx::RxStats[any:valid={}:{},Loss:{}]",data.count_p_any,data.count_p_valid,data.curr_packet_loss);
+  strm<<tmp;
+  return strm;
+}
+
 #endif  // WIFIBROADCAST_WBTXRX_H

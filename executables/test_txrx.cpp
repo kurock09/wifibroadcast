@@ -58,6 +58,7 @@ int main(int argc, char *const *argv) {
 
   const auto randomBufferPot = std::make_unique<RandomBufferPot>(1000, 1024);
 
+  auto lastLog=std::chrono::steady_clock::now();
   while (true){
     for(int i=0;i<100;i++){
       auto dummy_packet=randomBufferPot->getBuffer(i);
@@ -68,6 +69,16 @@ int main(int argc, char *const *argv) {
         wb_tx->try_enqueue_packet(dummy_packet);
       }
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
+      const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
+      if(elapsed_since_last_log>std::chrono::seconds(1)){
+        lastLog=std::chrono::steady_clock::now();
+        auto txStats=txrx->get_tx_stats();
+        auto rxStats=txrx->get_rx_stats();
+        auto rssi=txrx->get_rx_stats_for_card(0);
+        std::cout<<txStats<<"\n";
+        std::cout<<rxStats<<"\n";
+        std::cout<<"RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<"\n";
+      }
     }
   }
 }
