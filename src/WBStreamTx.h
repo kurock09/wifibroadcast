@@ -19,7 +19,7 @@
 class WBStreamTx {
  public:
   struct Options {
-    // needs to match the radio port of the corresponding tx
+    // needs to match the radio port of the corresponding rx
     uint8_t radio_port = 0;
     // size of packet data queue
     int packet_data_queue_size=64;
@@ -33,6 +33,8 @@ class WBStreamTx {
     bool log_time_spent_in_atomic_queue=false;
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
+    // set sched_param = max realtime on the thread that dequeues and injects the packets
+    bool dequeue_thread_max_realtime= true;
   };
   WBStreamTx(std::shared_ptr<WBTxRx> txrx,Options options);
   WBStreamTx(const WBStreamTx&) = delete;

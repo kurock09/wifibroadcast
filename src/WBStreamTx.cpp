@@ -109,7 +109,9 @@ WBStreamTx::Statistics WBStreamTx::get_latest_stats() {
 
 
 void WBStreamTx::loop_process_data() {
-  SchedulingHelper::setThreadParamsMaxRealtime();
+  if(options.dequeue_thread_max_realtime){
+    SchedulingHelper::setThreadParamsMaxRealtime();
+  }
   static constexpr std::int64_t timeout_usecs=100*1000;
   if(options.enable_fec){
     std::shared_ptr<EnqueuedBlock> frame;

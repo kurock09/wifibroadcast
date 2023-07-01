@@ -53,6 +53,8 @@ class WBTxRx {
     bool advanced_debugging_rx = false;
     // advanced latency related debugging
     bool advanced_latency_debugging_rx= false;
+    // set sched_param = max realtime on the thread that pulls out the packets
+    bool receive_thread_max_realtime= true;
   };
   explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
   WBTxRx(const WBTxRx &) = delete;

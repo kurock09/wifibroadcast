@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "pcap_helper.hpp"
+#include "SchedulingHelper.hpp"
 
 WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
     : m_options(options1),
@@ -116,6 +117,9 @@ void WBTxRx::rx_unregister_stream_handler(uint8_t radio_port) {
 }
 
 void WBTxRx::loop_receive_packets() {
+  if(m_options.receive_thread_max_realtime){
+    SchedulingHelper::setThreadParamsMaxRealtime();
+  }
   while (keep_receiving){
     const int timeoutMS = (int) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(1)).count();
     int rc = poll(m_receive_pollfds.data(), m_receive_pollfds.size(), timeoutMS);
