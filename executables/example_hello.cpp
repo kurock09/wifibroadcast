@@ -41,6 +41,7 @@ int main(int argc, char *const *argv) {
   }
   std::cout<<"Running as "<<(is_air ? "Air" : "Ground")<<" on card "<<card<<"\n";
 
+  // Create the Tx-RX
   std::vector<std::string> cards{card};
   WBTxRx::Options options_txrx{};
   options_txrx.rtl8812au_rssi_fixup= true;
@@ -62,7 +63,8 @@ int main(int argc, char *const *argv) {
   while (true){
     auto message=is_air ? fmt::format("Air says hello {}\n",packet_index) : fmt::format("Ground says hello {}\n",packet_index);
 
-    // Just use radio port 0 - we don't need multilexing here
+    // Just use radio port 0 - we don't need multiplexing in this example
+    // This message is injected on the wifi card
     txrx->tx_inject_packet(0,(uint8_t*)message.data(),message.size()+1);
 
     std::this_thread::sleep_for(std::chrono::milliseconds (1000));
