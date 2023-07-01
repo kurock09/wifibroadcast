@@ -29,14 +29,28 @@ WBStreamRx::WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1)
     };
     m_fec_disabled_decoder->mSendDecodedPayloadCallback = cb;
   }
-  auto cb=[this](uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len){
+  auto cb_packet=[this](uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len){
     this->on_new_packet(nonce,wlan_index,data,data_len);
   };
-  m_txrx->rx_register_specific_cb(m_options.radio_port,cb);
+  auto cb_sesssion=[this](){
+    //
+  };
+  auto handler=std::make_shared<WBTxRx::StreamRxHandler>(m_options.radio_port,cb_packet,cb_sesssion);
+  m_txrx->rx_register_stream_handler(handler);
   if(m_options.enable_threading){
     m_packet_queue=std::make_unique<moodycamel::BlockingReaderWriterCircularBuffer<std::shared_ptr<EnqueuedPacket>>>(m_options.packet_queue_size);
     m_process_data_thread_run=true;
     m_process_data_thread=std::make_unique<std::thread>(&WBStreamRx::loop_process_data, this);
+  }
+}
+
+WBStreamRx::~WBStreamRx() {
+  m_txrx->rx_unregister_stream_handler(m_options.radio_port);
+  if(m_options.enable_threading){
+    m_process_data_thread_run= false;
+    if(m_process_data_thread->joinable()){
+      m_process_data_thread->join();
+    }
   }
 }
 

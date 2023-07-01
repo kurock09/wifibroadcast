@@ -106,9 +106,13 @@ void WBTxRx::rx_register_callback(WBTxRx::OUTPUT_DATA_CALLBACK cb) {
   m_output_cb=std::move(cb);
 }
 
-void WBTxRx::rx_register_specific_cb(const uint8_t radioPort,
-                                     WBTxRx::SPECIFIC_OUTPUT_DATA_CB cb) {
-  m_specific_callbacks[radioPort]=std::move(cb);
+void WBTxRx::rx_register_stream_handler(std::shared_ptr<StreamRxHandler> handler) {
+  assert(handler);
+  m_rx_handlers[handler->radio_port]=handler;
+}
+
+void WBTxRx::rx_unregister_stream_handler(uint8_t radio_port) {
+  m_rx_handlers.erase(radio_port);
 }
 
 void WBTxRx::loop_receive_packets() {
@@ -302,10 +306,10 @@ void WBTxRx::on_valid_packet(uint64_t nonce,int wlan_index,const uint8_t radioPo
     m_output_cb(nonce,wlan_index,radioPort,data,data_len);
   }
   // find a consumer for data of this radio port
-  auto specific=m_specific_callbacks.find(radioPort);
-  if(specific!=m_specific_callbacks.end()){
-    SPECIFIC_OUTPUT_DATA_CB specific_cb=specific->second;
-    specific_cb(nonce,wlan_index,data,data_len);
+  auto handler=m_rx_handlers.find(radioPort);
+  if(handler!=m_rx_handlers.end()){
+    StreamRxHandler& rxHandler=*handler->second;
+    rxHandler.cb_packet(nonce,wlan_index,data,data_len);
   }
 }
 

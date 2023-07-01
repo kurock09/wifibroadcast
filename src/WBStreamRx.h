@@ -38,6 +38,7 @@ class WBStreamRx {
     int packet_queue_size=20;
   };
   WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1);
+  ~WBStreamRx();
   WBStreamRx(const WBStreamRx &) = delete;
   WBStreamRx &operator=(const WBStreamRx &) = delete;
   void set_callback(WBStreamRx::OUTPUT_DATA_CALLBACK output_data_callback);

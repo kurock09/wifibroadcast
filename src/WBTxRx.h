@@ -69,18 +69,28 @@ class WBTxRx {
   void tx_inject_packet(uint8_t radioPort,const uint8_t* data,int data_len);
 
   /**
-   * Callback that is called every time a valid packet has been received
-   * (valid = has been validated and decrypted)
+   * A typical stream RX (aka the receiver for a specific multiplexed stream) needs to react to events during streaming.
+   * For lowest latency, we do this via callback(s) that are called directly.
+   * You can register listening on these events and also deregister them here.
    * @param nonce: the nonce of the received packet (can be used for sequence numbering)
    * @param wlan_index: the card on which the packet was received (in case there are multiple cards used for wb)
    * @param radio_port: the multiplex index used to separate streams during injection
    */
-  typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
   typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len)> SPECIFIC_OUTPUT_DATA_CB;
+  typedef std::function<void()> NEW_SESSION_CB;
+  struct StreamRxHandler{
+    uint8_t radio_port; // For which multiplexed stream this handles events
+    SPECIFIC_OUTPUT_DATA_CB cb_packet; // called every time a packet for this stream is received
+    NEW_SESSION_CB cb_session; // called every time a new session is detecetd
+    //StreamRxHandler()=default;
+    StreamRxHandler(uint8_t radio_port1,SPECIFIC_OUTPUT_DATA_CB cb_packet1,NEW_SESSION_CB cb_session1)
+    :radio_port(radio_port1),cb_packet(cb_packet1),cb_session(cb_session1){}
+  };
+  void rx_register_stream_handler(std::shared_ptr<StreamRxHandler> handler);
+  void rx_unregister_stream_handler(uint8_t radio_port);
+  typedef std::function<void(uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len)> OUTPUT_DATA_CALLBACK;
   // register callback that is called each time a valid packet is received (any multiplexed stream)
   void rx_register_callback(OUTPUT_DATA_CALLBACK cb);
-  // register callback that is called each time a valid packet is received for a specific stream
-  void rx_register_specific_cb(uint8_t radioPort,SPECIFIC_OUTPUT_DATA_CB cb);
 
   /**
    * Receiving packets happens in the background in another thread.
@@ -176,7 +186,7 @@ class WBTxRx {
   // with the RTL8812au.
   static constexpr std::chrono::nanoseconds MAX_SANE_INJECTION_TIME=std::chrono::milliseconds(5);
   std::vector<RxStatsPerCard> m_rx_packet_stats;
-  std::map<int,SPECIFIC_OUTPUT_DATA_CB> m_specific_callbacks;
+  std::map<int,std::shared_ptr<StreamRxHandler>> m_rx_handlers;
   // If each iteration pulls too many packets out your CPU is most likely too slow
   AvgCalculatorSize m_n_packets_polled_pcap;
   AvgCalculator m_packet_host_latency;
