@@ -59,6 +59,10 @@ to_time_point_system_clock(timeval tv){
   using namespace std::chrono;
   return system_clock::time_point{seconds{tv.tv_sec} + microseconds{tv.tv_usec}};
 }
+static int get_curr_time_ms(){
+  auto now=std::chrono::steady_clock::now();
+  return (int)std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+}
 };
 template<typename T>
 struct MinMaxAvg{

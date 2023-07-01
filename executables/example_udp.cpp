@@ -8,6 +8,7 @@
 #include "../src/wifibroadcast-spdlog.h"
 #include "../src/HelperSources/SocketHelper.hpp"
 #include "RandomBufferPot.hpp"
+#include "../src/HelperSources/TimeHelper.hpp"
 
 /**
  * Simple example application that uses UDP as data input / output
@@ -69,9 +70,12 @@ int main(int argc, char *const *argv) {
     options_tx.radio_port=10;
     options_tx.enable_fec= enable_fec;
     std::unique_ptr<WBStreamTx> wb_tx=std::make_unique<WBStreamTx>(txrx,options_tx);
+    // catches a common newbie mistake of forgetting that this buffers in packets
+    int last_udp_in_packet_ts_ms=MyTimeHelper:: get_curr_time_ms();
     // we need to buffer packets due to udp
     std::vector<std::shared_ptr<std::vector<uint8_t>>> block;
-    auto cb_udp_in=[&wb_tx,&block](const uint8_t *payload, const std::size_t payloadSize){
+    auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms](const uint8_t *payload, const std::size_t payloadSize){
+      last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
       auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
       block.push_back(packet);
       if(block.size()==8){
@@ -91,6 +95,10 @@ int main(int argc, char *const *argv) {
         lastLog=std::chrono::steady_clock::now();
         auto txStats=txrx->get_tx_stats();
         std::cout<<txStats<<std::endl;
+      }
+      auto elapsed_since_last_udp_packet=MyTimeHelper::get_curr_time_ms()-last_udp_in_packet_ts_ms;
+      if(elapsed_since_last_udp_packet>1000*1000*5){
+        console->warn("No udp packet for >= 5 seconds");
       }
     }
   }else{
