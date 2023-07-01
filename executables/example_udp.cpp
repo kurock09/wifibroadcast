@@ -74,11 +74,12 @@ int main(int argc, char *const *argv) {
     int last_udp_in_packet_ts_ms=MyTimeHelper:: get_curr_time_ms();
     // we need to buffer packets due to udp
     std::vector<std::shared_ptr<std::vector<uint8_t>>> block;
+    static constexpr auto M_FEC_K=8;
     auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms](const uint8_t *payload, const std::size_t payloadSize){
       last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
       auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
       block.push_back(packet);
-      if(block.size()==8){
+      if(block.size()==M_FEC_K){
         wb_tx->try_enqueue_block(block,100,20);
         block.resize(0);
       }
@@ -87,6 +88,7 @@ int main(int argc, char *const *argv) {
         SocketHelper::ADDRESS_LOCALHOST,5600,cb_udp_in);
     m_udp_in->runInBackground();
     console->info("Expecting data on localhost:5600");
+    console->warn("This buffers {} packets on udp in !",M_FEC_K);
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
