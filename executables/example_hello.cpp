@@ -10,6 +10,11 @@
 
 /**
  * Simple demo application that sends out hello messages and listens for hello messages.
+ * You can run it either on 2 different systems (air unit and ground unit)
+ * or run it on the same system with 2 different wifi cards for testing.
+ *
+ * On success, you should see the air unit talking to the ground unit and vice versa.
+ *
  * NOTE: Card(s) need to be in monitor mode & on match on the selected frequency !
  */
 int main(int argc, char *const *argv) {
