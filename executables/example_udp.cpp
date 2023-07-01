@@ -20,7 +20,7 @@
  *
  * NOTE: This example does not support running another instance of it simultaneously - if you want to do multiplexing,
  * do it in c++ code, you cannot do it via shell anymore ! This might be harder to start with, but gives a lot of advantages,
- * like easier debugging (only debug one single application, not 100s of open terminals), and tither control over packet queues / less latency
+ * like easier debugging (only debug one single application, not 100s of open terminals), and tighter control over packet queues / less latency
  * due to no UDP.
  *
  * When run as air: Expects UDP data on port 5600
