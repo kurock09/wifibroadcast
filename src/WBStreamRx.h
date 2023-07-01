@@ -20,7 +20,7 @@
 
 /**
  * Receiver for a (multiplexed) wifbroadcast stream
- * uses WBTxRx
+ * uses WBTxRx to receive packets
  * supports enabling / disabling FEC and more
  */
 class WBStreamRx {

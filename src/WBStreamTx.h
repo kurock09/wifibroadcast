@@ -18,7 +18,7 @@
 
 /**
  * Transmitter for a (multiplexed) wifbroadcast stream
- * uses WBTxRx
+ * uses WBTxRx to send packets
  * supports enabling / disabling FEC and more
  */
 class WBStreamTx {
