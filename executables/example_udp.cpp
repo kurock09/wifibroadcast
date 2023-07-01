@@ -15,6 +15,7 @@
  *
  * NOTE: The input stream is protected by FEC - but this serves only demo purposes here
  * For proper usage of FEC during wifibroadcast streaming (no latency overhead), please check out openhd.
+ * ! IN THIS EXAMPLE, 8 UDP PACKETS ARE BUFFERED BEFORE FORWARDING !
  *
  * NOTE: This example does not support running another instance of it simultaneously - if you want to do multiplexing,
  * do it in c++ code, you cannot do it via shell anymore !
