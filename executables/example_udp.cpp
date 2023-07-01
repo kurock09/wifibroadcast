@@ -97,8 +97,9 @@ int main(int argc, char *const *argv) {
         std::cout<<txStats<<std::endl;
       }
       auto elapsed_since_last_udp_packet=MyTimeHelper::get_curr_time_ms()-last_udp_in_packet_ts_ms;
-      if(elapsed_since_last_udp_packet>1000*1000*5){
-        console->warn("No udp packet for >= 5 seconds");
+      const int UDP_LAST_PACKET_MIN_INTERVAL_S=2;
+      if(elapsed_since_last_udp_packet>1000*UDP_LAST_PACKET_MIN_INTERVAL_S){
+        console->warn("No udp packet in for >= {} seconds",UDP_LAST_PACKET_MIN_INTERVAL_S);
       }
     }
   }else{
