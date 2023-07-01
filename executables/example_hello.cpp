@@ -63,6 +63,7 @@ int main(int argc, char *const *argv) {
   int packet_index=0;
   while (true){
     auto message=is_air ? fmt::format("Air says hello {}",packet_index) : fmt::format("Ground says hello {}",packet_index);
+    packet_index++;
 
     // Just use radio port 0 - we don't need multiplexing in this example
     // This message is injected on the wifi card
