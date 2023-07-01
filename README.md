@@ -1,10 +1,10 @@
 # Summary
 c++ Library for wifibroadcast video and telemetry streaming. \
-FEATURES: 
+## Features
 1) Multiplexing and packet validation / encryption
 2) Zero latency overhead FEC video streaming (requires usage of c++)
 3) SIMD accelerated FEC (NEON on ARM, SSSE3 on x86)
-4) Advanced debugging and statistics (e.g. packet loss)
+4) Advanced debugging and statistics (e.g. packet loss) [see](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/src/WBTxRx.h#L121)
 5) Simple examples to get started
 6) Basic unit tests for FEC
 
