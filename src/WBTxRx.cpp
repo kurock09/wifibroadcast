@@ -86,7 +86,8 @@ void WBTxRx::tx_inject_packet(const uint8_t radioPort,
   // we inject the packet on whatever card has the highest rx rssi right now
   pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
   const auto before_injection = std::chrono::steady_clock::now();
-  const auto len_injected=pcap_inject(tx, packet.data(), packet.size());
+  //const auto len_injected=pcap_inject(tx, packet.data(), packet.size());
+  const auto len_injected=write(m_receive_pollfds.at(0).fd,packet.data(),packet.size());
   const auto delta_inject=std::chrono::steady_clock::now()-before_injection;
   if(delta_inject>=MAX_SANE_INJECTION_TIME){
     m_tx_stats.count_tx_injections_error_hint++;
