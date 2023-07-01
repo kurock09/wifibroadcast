@@ -152,7 +152,7 @@ class WBTxRx {
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
   struct PcapTxRx{
-    pcap_t *tx= nullptr;
+    //pcap_t *tx= nullptr;
     pcap_t *rx= nullptr;
   };
   std::vector<PcapTxRx> m_pcap_handles;

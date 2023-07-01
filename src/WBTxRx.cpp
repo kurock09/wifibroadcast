@@ -22,7 +22,7 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};
     pcapTxRx.rx=wifibroadcast::pcap_helper::open_pcap_rx(wifi_card);
-    pcapTxRx.tx=wifibroadcast::pcap_helper::open_pcap_tx(wifi_card);
+    //pcapTxRx.tx=wifibroadcast::pcap_helper::open_pcap_tx(wifi_card);
     if(m_options.set_direction){
       pcap_setdirection(pcapTxRx.rx, PCAP_D_IN);
     }
@@ -46,7 +46,7 @@ WBTxRx::~WBTxRx() {
   }
   for(auto& pcapTxRx:m_pcap_handles){
     pcap_close(pcapTxRx.rx);
-    pcap_close(pcapTxRx.tx);
+    //pcap_close(pcapTxRx.tx);
   }
 }
 
@@ -84,7 +84,7 @@ void WBTxRx::tx_inject_packet(const uint8_t radioPort,
   assert(data_len+crypto_aead_chacha20poly1305_ABYTES == ciphertext_len);
   // inject via pcap
   // we inject the packet on whatever card has the highest rx rssi right now
-  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
+  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
   const auto before_injection = std::chrono::steady_clock::now();
   const auto len_injected=pcap_inject(tx, packet.data(), packet.size());
   const auto delta_inject=std::chrono::steady_clock::now()-before_injection;
@@ -340,7 +340,7 @@ void WBTxRx::send_session_key() {
   tmp_ieee_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
   auto packet=wifibroadcast::pcap_helper::create_radiotap_wifi_packet(tmp_radiotap_header,tmp_ieee_hdr,
                                                           (uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES);
-  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].tx;
+  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
   const auto len_injected=pcap_inject(tx,packet.data(),packet.size());
   if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
