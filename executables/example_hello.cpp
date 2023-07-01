@@ -8,7 +8,10 @@
 #include "../src/wifibroadcast-spdlog.h"
 #include "RandomBufferPot.hpp"
 
-
+/**
+ * Simple demo application that sends out hello messages and listens for hello messages.
+ * NOTE: Card(s) need to be in monitor mode & on match on the selected frequency !
+ */
 int main(int argc, char *const *argv) {
   std::string card="wlxac9e17596103";
   bool pcap_setdirection= true;
