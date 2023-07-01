@@ -55,7 +55,7 @@ int main(int argc, char *const *argv) {
 
   WBTxRx::OUTPUT_DATA_CALLBACK cb=[](uint64_t nonce,int wlan_index,const uint8_t radioPort,const uint8_t *data, const std::size_t data_len){
     std::string message((const char*)data,data_len);
-    fmt::print("Got packet[{}]",message);
+    fmt::print("Got packet[{}]\n",message);
   };
   txrx->rx_register_callback(cb);
 
