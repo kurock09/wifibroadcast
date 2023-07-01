@@ -22,6 +22,10 @@
 #include "HelperSources/TimeHelper.hpp"
 #include "wifibroadcast-spdlog.h"
 
+/**
+ * Encoder and Decoder pair for FEC protected block / packet based data streaming.
+ */
+
 static_assert(__BYTE_ORDER == __LITTLE_ENDIAN, "This code is written for little endian only !");
 
 struct FECPayloadHdr{
