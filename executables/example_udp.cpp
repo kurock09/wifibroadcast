@@ -50,7 +50,8 @@ int main(int argc, char *const *argv) {
         exit(1);
     }
   }
-  std::cout<<"Running as "<<(is_air ? "Air" : "Ground")<<" on card "<<card<<"\n";
+  auto console=wifibroadcast::log::create_or_get("main");
+  console->info("Running as {} on card {}",(is_air ? "Air" : "Ground"),card);
 
   std::vector<std::string> cards{card};
   WBTxRx::Options options_txrx{};
@@ -81,7 +82,7 @@ int main(int argc, char *const *argv) {
     std::unique_ptr<SocketHelper::UDPReceiver> m_udp_in=std::make_unique<SocketHelper::UDPReceiver>(
         SocketHelper::ADDRESS_LOCALHOST,5600,cb_udp_in);
     m_udp_in->runInBackground();
-    std::cout<<"Expecting data on localhost:5600\n";
+    console->info("Expecting data on localhost:5600");
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
@@ -89,7 +90,7 @@ int main(int argc, char *const *argv) {
       if(elapsed_since_last_log>std::chrono::seconds(1)){
         lastLog=std::chrono::steady_clock::now();
         auto txStats=txrx->get_tx_stats();
-        std::cout<<txStats<<"\n";
+        std::cout<<txStats<<std::endl;
       }
     }
   }else{
@@ -107,7 +108,7 @@ int main(int argc, char *const *argv) {
     };
     wb_rx->set_callback(cb);
     txrx->start_receiving();
-    std::cout<<"Sending data to localhost:5600\n";
+    console->info("Sending data to localhost:5601");
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
@@ -116,8 +117,8 @@ int main(int argc, char *const *argv) {
         lastLog=std::chrono::steady_clock::now();
         auto rxStats=txrx->get_rx_stats();
         auto rssi=txrx->get_rx_stats_for_card(0);
-        std::cout<<rxStats<<"\n";
-        std::cout<<"RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<"\n";
+        std::cout<<rxStats<<std::endl;
+        std::cout<<"RSSI:"<<(int)rssi.rssi_for_wifi_card.last_rssi<<std::endl;
       }
     }
   }
