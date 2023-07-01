@@ -36,6 +36,7 @@ int main(int argc, char *const *argv) {
         exit(1);
     }
   }
+  std::cout<<"Running as "<<(is_air ? "Air" : "Ground")<<" on card "<<card<<"\n";
 
   std::vector<std::string> cards{card};
   WBTxRx::Options options_txrx{};
