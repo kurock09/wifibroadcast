@@ -211,7 +211,7 @@ class WBTxRx {
 };
 
 static std::ostream& operator<<(std::ostream& strm, const WBTxRx::TxStats& data){
-  auto tmp=fmt::format("TxStats[injected packets:{} bytes:{} tx errors:{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint,);
+  auto tmp=fmt::format("TxStats[injected packets:{} bytes:{} tx errors:{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint);
   strm<<tmp;
   return strm;
 }
