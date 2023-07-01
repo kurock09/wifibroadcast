@@ -82,6 +82,7 @@ class WBStreamRx {
   std::unique_ptr<FECDisabledDecoder2> m_fec_disabled_decoder = nullptr;
   seq_nr::Helper m_seq_nr_helper;
   void on_new_packet(uint64_t nonce,int wlan_index,const uint8_t *data, const std::size_t data_len);
+  void on_new_session();
   void on_decoded_packet(const uint8_t* data,int data_len);
   // used only if threading is enabled
   struct EnqueuedPacket{

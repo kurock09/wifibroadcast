@@ -403,3 +403,8 @@ void FECDecoder::process_with_rx_queue(const FECPayloadHdr& header,
     }
   }
 }
+
+void FECDecoder::reset_rx_queue() {
+  auto block=rxQueuePopFront()
+  while (blo)
+}

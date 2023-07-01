@@ -33,7 +33,7 @@ WBStreamRx::WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1)
     this->on_new_packet(nonce,wlan_index,data,data_len);
   };
   auto cb_sesssion=[this](){
-    //
+    this->on_new_session();
   };
   auto handler=std::make_shared<WBTxRx::StreamRxHandler>(m_options.radio_port,cb_packet,cb_sesssion);
   m_txrx->rx_register_stream_handler(handler);
@@ -77,6 +77,13 @@ void WBStreamRx::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *da
       m_fec_disabled_decoder->process_packet(data,data_len);
     }
   }
+}
+
+void WBStreamRx::on_new_session() {
+  if(m_fec_decoder){
+    m_fec_decoder->reset_rx_queue();
+  }
+  reset_stream_stats();
 }
 
 void WBStreamRx::loop_process_data() {

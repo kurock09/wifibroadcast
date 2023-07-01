@@ -258,6 +258,7 @@ class FECDecoder {
     MinMaxAvg<std::chrono::nanoseconds> curr_fec_decode_time{};
   };
   FECRxStats stats{};
+  void reset_rx_queue();
 };
 
 // quick math regarding sequence numbers:
