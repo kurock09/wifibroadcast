@@ -156,21 +156,20 @@ int main(int argc, char *argv[]) {
   }
   print_optimization_method();
 
-  TestFEC::test_fec_stream_random_bs_fs_overhead_dropped();
-
   try {
 	if (test_mode == 0 || test_mode == 1) {
-	  std::cout << "Testing FEC\n";
+	  std::cout << "Testing FEC"<<std::endl;
+          // First test FEC itself
 	  test_gf();
 	  test_fec();
 	  testFecCPlusPlusWrapperX();
+          // and then the FEC streaming implementation
+          TestFEC::test_fec_stream_random_bs_fs_overhead_dropped();
 	}
 	if (test_mode == 0 || test_mode == 2) {
-	  //
-	  std::cout << "Testing Encryption\n";
+	  std::cout << "Testing Encryption"<<std::endl;
 	  TestEncryption::test(false);
 	  TestEncryption::test(true);
-	  //
 	}
   } catch (std::runtime_error &e) {
 	std::cerr << "Error: " << std::string(e.what());
