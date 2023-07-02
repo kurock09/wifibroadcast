@@ -52,7 +52,7 @@ static std::string benchmarkTypeReadable(const BenchmarkType value) {
 
 struct Options {
   // size of each packet
-  int PACKET_SIZE = FEC_MAX_PAYLOAD_SIZE;
+  int PACKET_SIZE = FEC_PACKET_MAX_PAYLOAD_SIZE;
   int FEC_K = 10;
   int FEC_PERCENTAGE = 50;
   BenchmarkType benchmarkType = BenchmarkType::FEC_ENCODE;
