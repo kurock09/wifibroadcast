@@ -96,7 +96,7 @@ void WBTxRx::tx_inject_packet(const uint8_t radioPort,
   }
   if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
-    wifibroadcast::log::get_default()->warn("pcap -unable to inject packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
+    m_console->warn("pcap -unable to inject packet size:{} ret:{} err:[{}]",packet.size(),len_injected, pcap_geterr(tx));
   }else{
     m_tx_stats.n_injected_bytes+=packet_size;
     m_tx_stats.n_injected_packets++;
@@ -147,7 +147,7 @@ void WBTxRx::loop_receive_packets() {
           // limit logging here
           const auto elapsed=std::chrono::steady_clock::now()-m_last_receiver_error_log;
           if(elapsed>std::chrono::seconds(1)){
-            wifibroadcast::log::get_default()->warn("RawReceiver errors {} on pcap fds {} (wlan {})",m_n_receiver_errors,i,m_wifi_cards[i]);
+            m_console->warn("RawReceiver errors {} on pcap fds {} (wlan {})",m_n_receiver_errors,i,m_wifi_cards[i]);
             m_last_receiver_error_log=std::chrono::steady_clock::now();
           }
         }else{
@@ -360,7 +360,7 @@ void WBTxRx::send_session_key() {
   const auto len_injected=pcap_inject(tx,packet.data(),packet.size());
   if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
-    wifibroadcast::log::get_default()->warn("pcap -unable to inject session key packet size:{} ret:{} err:{}",packet.size(),len_injected, pcap_geterr(tx));
+    m_console->warn("pcap -unable to inject packet size:{} ret:{} err:[{}]",packet.size(),len_injected, pcap_geterr(tx));
   }
 }
 
