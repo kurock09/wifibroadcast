@@ -2,7 +2,7 @@
 #define EMULATEDPACKETDROP_H
 
 #include <cstdlib>
-#include <time.h>
+#include <ctime>
 
 #include <random>
 #include <mutex>
