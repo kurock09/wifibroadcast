@@ -9,7 +9,7 @@
 #include "SocketHelper.hpp"
 
 /**
- * Uses UDP for out in instead of callback
+ * Uses UDP for data out instead of callback
  */
 class WBStreamRxUDP{
  public:
@@ -23,7 +23,7 @@ class WBStreamRxUDP{
     };
     wb_rx->set_callback(cb);
     auto console=wifibroadcast::log::create_or_get(fmt::format("radio_port{}->udp{}",options.radio_port,udp_port_out));
-    console->info("Sending data to localhost:5601");
+    console->info("Sending data to localhost:{}",udp_port_out);
   }
   std::unique_ptr<SocketHelper::UDPForwarder> m_udp_out;
   std::unique_ptr<WBStreamRx> wb_rx;
