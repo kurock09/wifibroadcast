@@ -51,6 +51,7 @@ class WBStreamRx {
     int64_t n_input_bytes=0;
     int curr_in_packets_per_second=0;
     int curr_in_bits_per_second=0;
+    int curr_out_bits_per_second=0;
   };
   Statistics get_latest_stats();
   // matches FECDecoder
@@ -77,6 +78,7 @@ class WBStreamRx {
   WBStreamRx::OUTPUT_DATA_CALLBACK m_out_cb= nullptr;
   int64_t m_n_input_packets=0;
   int64_t m_n_input_bytes=0;
+  std::atomic<int64_t> m_n_output_bytes=0;
   BitrateCalculator m_input_bitrate_calculator{};
   PacketsPerSecondCalculator m_input_packets_per_second_calculator{};
   // for calculating the current rx bitrate

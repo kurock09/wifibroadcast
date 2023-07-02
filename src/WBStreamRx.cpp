@@ -106,6 +106,7 @@ void WBStreamRx::process_queued_packet(const WBStreamRx::EnqueuedPacket &packet)
 }
 
 void WBStreamRx::on_decoded_packet(const uint8_t *data, int data_len) {
+  m_n_output_bytes+=data_len;
   if(m_out_cb){
     m_out_cb(data,data_len);
   }
@@ -120,6 +121,8 @@ WBStreamRx::Statistics WBStreamRx::get_latest_stats() {
           m_n_input_packets,std::chrono::seconds(2));
   ret.curr_in_bits_per_second=m_input_bitrate_calculator.get_last_or_recalculate(
       m_n_input_bytes,std::chrono::seconds(2));
+  ret.curr_out_bits_per_second=m_received_bitrate_calculator.get_last_or_recalculate(
+      m_n_output_bytes,std::chrono::seconds(2));
   return ret;
 }
 
