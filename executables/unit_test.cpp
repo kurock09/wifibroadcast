@@ -40,7 +40,7 @@ namespace TestFEC {
 // 2) size of data in each fragment in a block
 // 3) a fec overhead value (k)
 // 4) a specific amount of dropped packets, but keeping enough packets to be fully recoverable
-static void test_random_bs_fs_overhead_dropped(){
+static void test_fec_stream_random_bs_fs_overhead_dropped(){
   wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped begin");
   std::vector<std::vector<std::vector<uint8_t>>> fragmented_frames_in;
   std::vector<std::vector<uint8_t>> fragmented_frames_sequential_in;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   }
   print_optimization_method();
 
-  TestFEC::test_random_bs_fs_overhead_dropped();
+  TestFEC::test_fec_stream_random_bs_fs_overhead_dropped();
 
   try {
 	if (test_mode == 0 || test_mode == 1) {
