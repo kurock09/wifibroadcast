@@ -19,6 +19,7 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
   m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(m_wifi_cards),m_options.set_direction);
   m_receive_pollfds.resize(m_wifi_cards.size());
   m_rx_packet_stats.resize(m_wifi_cards.size());
+  //m_seq_nr_per_card.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};

@@ -196,6 +196,8 @@ class WBTxRx {
   static constexpr auto RADIO_PORT_SESSION_KEY_PACKETS=25;
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
+  // for calculating the loss per rx card (when multiple rx cards are used)
+  //std::vector<seq_nr::Helper> m_seq_nr_per_card;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
   RxStats m_rx_stats{};
   TxStats m_tx_stats{};
