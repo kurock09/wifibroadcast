@@ -245,6 +245,14 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       }
       return;
     }
+    // Issue when using multiple wifi card(s) on ground - by example:
+    // When we inject data on card 1, it is intended for the "air unit" - however,
+    // card 2 on the ground likely picks up such a packet and if we were not to ignore it, we'd get the session key
+    // TODO make it better -
+    // for now, ignore session key packets not from card 0
+    if(wlan_idx!=0){
+      return ;
+    }
     SessionKeyPacket &sessionKeyPacket = *((SessionKeyPacket*) parsedPacket->payload);
     if (m_decryptor->onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData)) {
       m_console->debug("Initializing new session.");
