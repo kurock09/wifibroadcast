@@ -72,7 +72,7 @@ int main(int argc, char *const *argv) {
 
     // Just use radio port 0 - we don't need multiplexing in this example
     // This message is injected on the wifi card
-    txrx->tx_inject_packet(0,(uint8_t*)message.data(),message.size()+1);
+    txrx->tx_inject_packet(0,(uint8_t*)message.data(),message.size());
 
     std::this_thread::sleep_for(std::chrono::milliseconds (1000));
     const auto elapsed_since_last_log=std::chrono::steady_clock::now()-lastLog;
