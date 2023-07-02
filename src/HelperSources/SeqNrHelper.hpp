@@ -10,7 +10,7 @@
 
 namespace seq_nr{
 
-static int diff_between_packets(int last_packet,int curr_packet){
+static int diff_between_packets_rolling_uint16_t(int last_packet,int curr_packet){
   if(last_packet==curr_packet){
     wifibroadcast::log::get_default()->debug("Duplicate in seq nr, invalid usage");
   }
@@ -42,7 +42,8 @@ class Helper{
       m_last_seq_nr=seq_nr;
       return;
     }
-    const auto diff= diff_between_packets(m_last_seq_nr,seq_nr);
+    const auto diff=
+        diff_between_packets_rolling_uint16_t(m_last_seq_nr, seq_nr);
     if(diff>1){
       // as an example, a diff of 2 means one packet is missing.
       m_n_missing_packets+=diff-1;
