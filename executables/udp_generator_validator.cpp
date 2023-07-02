@@ -24,6 +24,7 @@
 #include <chrono>
 #include <sstream>
 #include <thread>
+#include <signal.h>
 
 struct Options {
   // size of each packet

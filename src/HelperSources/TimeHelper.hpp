@@ -63,6 +63,28 @@ static int get_curr_time_ms(){
   auto now=std::chrono::steady_clock::now();
   return (int)std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 }
+using namespace std::chrono;
+static constexpr nanoseconds timevalToDuration(timeval tv) {
+  auto duration = seconds{tv.tv_sec}
+                  + microseconds{tv.tv_usec};
+  return duration_cast<nanoseconds>(duration);
+}
+static constexpr time_point<system_clock, nanoseconds>
+timevalToTimePointSystemClock(timeval tv) {
+  return time_point<system_clock, nanoseconds>{
+      duration_cast<system_clock::duration>(timevalToDuration(tv))};
+}
+static constexpr time_point<steady_clock, nanoseconds>
+timevalToTimePointSteadyClock(timeval tv) {
+  return time_point<steady_clock, nanoseconds>{
+      duration_cast<steady_clock::duration>(timevalToDuration(tv))};
+}
+static constexpr timeval durationToTimeval(nanoseconds dur) {
+  const auto secs = duration_cast<seconds>(dur);
+  dur -= secs;
+  const auto us = duration_cast<microseconds>(dur);
+  return timeval{secs.count(), us.count()};
+}
 };
 template<typename T>
 struct MinMaxAvg{

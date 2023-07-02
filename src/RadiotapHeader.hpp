@@ -91,13 +91,13 @@ class RadiotapHeader {
   // Make sure that this is the only constructor
   explicit RadiotapHeader(const UserSelectableParams &params) {
     if (params.mcs_index < 0 || params.mcs_index > 7) {
-      throw std::runtime_error(StringFormat::convert("Unsupported MCS index %d", params.mcs_index));
+      throw std::runtime_error(fmt::format("Unsupported MCS index {}", params.mcs_index));
     }
     if (!(params.bandwidth == 20 || params.bandwidth == 40)) {
-      throw std::runtime_error(StringFormat::convert("Unsupported bandwidth: %d", params.bandwidth));
+      throw std::runtime_error(fmt::format("Unsupported bandwidth: {}", params.bandwidth));
     }
     if (!(params.stbc == 0 || params.stbc == 1 || params.stbc == 2 || params.stbc == 3)) {
-      throw std::runtime_error(StringFormat::convert("Unsupported STBC: %d", params.stbc));
+      throw std::runtime_error(fmt::format("Unsupported STBC: {}", params.stbc));
     }
     // size is fixed here
     radiotapHeaderData.length = SIZE_BYTES;

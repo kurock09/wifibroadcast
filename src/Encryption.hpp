@@ -33,15 +33,15 @@ class Encryptor {
     } else {
       FILE *fp;
       if ((fp = fopen(keypair->c_str(), "r")) == nullptr) {
-        throw std::runtime_error(StringFormat::convert("Unable to open %s: %s", keypair->c_str(), strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to open {}: {}", keypair->c_str(), strerror(errno)));
       }
       if (fread(tx_secretkey.data(), crypto_box_SECRETKEYBYTES, 1, fp) != 1) {
         fclose(fp);
-        throw std::runtime_error(StringFormat::convert("Unable to read tx secret key: %s", strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to read tx secret key: {}", strerror(errno)));
       }
       if (fread(rx_publickey.data(), crypto_box_PUBLICKEYBYTES, 1, fp) != 1) {
         fclose(fp);
-        throw std::runtime_error(StringFormat::convert("Unable to read rx public key: %s", strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to read rx public key: {}", strerror(errno)));
       }
       fclose(fp);
     }
@@ -93,15 +93,15 @@ class Decryptor {
     } else {
       FILE *fp;
       if ((fp = fopen(keypair->c_str(), "r")) == nullptr) {
-        throw std::runtime_error(StringFormat::convert("Unable to open %s: %s", keypair->c_str(), strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to open {}: {}", keypair->c_str(), strerror(errno)));
       }
       if (fread(rx_secretkey.data(), crypto_box_SECRETKEYBYTES, 1, fp) != 1) {
         fclose(fp);
-        throw std::runtime_error(StringFormat::convert("Unable to read rx secret key: %s", strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to read rx secret key: {}", strerror(errno)));
       }
       if (fread(tx_publickey.data(), crypto_box_PUBLICKEYBYTES, 1, fp) != 1) {
         fclose(fp);
-        throw std::runtime_error(StringFormat::convert("Unable to read tx public key: %s", strerror(errno)));
+        throw std::runtime_error(fmt::format("Unable to read tx public key: {}", strerror(errno)));
       }
       fclose(fp);
     }

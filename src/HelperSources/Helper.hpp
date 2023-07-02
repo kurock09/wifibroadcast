@@ -5,55 +5,15 @@
 #ifndef WIFIBROADCAST_HELPER_H
 #define WIFIBROADCAST_HELPER_H
 
-#include "StringHelper.hpp"
-
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
-#include <resolv.h>
-#include <cstring>
-#include <utime.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <endian.h>
-#include <fcntl.h>
-#include <ctime>
-#include <sys/mman.h>
-#include <string>
-#include <vector>
 #include <chrono>
-#include <cstdarg>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netinet/ether.h>
-#include <netpacket/packet.h>
-#include <termio.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <iostream>
 #include <memory>
 #include <cassert>
-#include <functional>
-#include <thread>
+#include <cstring>
 #include <algorithm>
-#include <thread>
+
+#include "StringHelper.hpp"
 
 // Generic "Helper" code that does not depend on anything else other than the std libraries
-
-namespace StringFormat {
-static std::string convert(const char *format, ...) {
-  va_list args;
-  va_start(args, format);
-  size_t size = vsnprintf(nullptr, 0, format, args) + 1; // Extra space for '\0'
-  va_end(args);
-  std::unique_ptr<char[]> buf(new char[size]);
-  va_start(args, format);
-  vsnprintf(buf.get(), size, format, args);
-  va_end(args);
-  return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
-}
-}
 
 namespace GenericHelper {
 // fill buffer with random bytes
@@ -230,49 +190,7 @@ static std::vector<unsigned int> findMissingIndices(const std::vector<unsigned i
   }
   return indicesMissing;
 }
-using namespace std::chrono;
-static constexpr nanoseconds timevalToDuration(timeval tv) {
-  auto duration = seconds{tv.tv_sec}
-      + microseconds{tv.tv_usec};
-  return duration_cast<nanoseconds>(duration);
 }
-static constexpr time_point<system_clock, nanoseconds>
-timevalToTimePointSystemClock(timeval tv) {
-  return time_point<system_clock, nanoseconds>{
-      duration_cast<system_clock::duration>(timevalToDuration(tv))};
-}
-static constexpr time_point<steady_clock, nanoseconds>
-timevalToTimePointSteadyClock(timeval tv) {
-  return time_point<steady_clock, nanoseconds>{
-      duration_cast<steady_clock::duration>(timevalToDuration(tv))};
-}
-static constexpr timeval durationToTimeval(nanoseconds dur) {
-  const auto secs = duration_cast<seconds>(dur);
-  dur -= secs;
-  const auto us = duration_cast<microseconds>(dur);
-  return timeval{secs.count(), us.count()};
-}
-}
-
-//https://stackoverflow.com/questions/66588729/is-there-an-alternative-to-stdbind-that-doesnt-require-placeholders-if-functi/66640702#66640702
-namespace notstd {
-template<class F, class...Args>
-auto inline bind_front(F &&f, Args &&...args) {
-  return [f = std::forward<F>(f), tup = std::make_tuple(std::forward<Args>(args)...)](auto &&... more_args)
-      -> decltype(auto) {
-    return std::apply([&](auto &&...args) -> decltype(auto) {
-      return std::invoke(f, decltype(args)(args)..., decltype(more_args)(more_args)...);
-    }, tup);
-  };
-}
-}
-/*#include <linux/wireless.h>
-#include <ifaddrs.h>
-#include <linux/nl80211.h>
-#include <linux/netlink.h>
-
-namespace Experiment{
-}*/
 
 
 

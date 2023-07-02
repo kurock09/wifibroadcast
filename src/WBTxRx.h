@@ -10,6 +10,7 @@
 #include <atomic>
 #include <map>
 #include <utility>
+#include <thread>
 
 #include "Encryption.hpp"
 #include "Ieee80211Header.hpp"
