@@ -22,6 +22,7 @@ class WBStreamTxUDP{
     auto cb_udp_in=[this,&options,&block,&fec_k](const uint8_t *payload, const std::size_t payloadSize){
       last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
       if(options.enable_fec){
+        // We need to buffer data here for FEC
         auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
         block.push_back(packet);
         if(block.size()==fec_k){
