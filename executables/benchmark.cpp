@@ -55,8 +55,8 @@ static std::string benchmarkTypeReadable(const int value) {
 struct Options {
   // size of each packet
   int PACKET_SIZE = FEC_PACKET_MAX_PAYLOAD_SIZE;
-  int FEC_K = 10; // not used when testing encryption / decryption
-  int FEC_PERCENTAGE = 50; // not used when testing encryption / decryption
+  int FEC_K = 12; // not used when testing encryption / decryption
+  int FEC_PERCENTAGE = 20; // not used when testing encryption / decryption
   int benchmarkType = BENCHMARK_FEC_ENCODE;
   // How long the benchmark will run
   int benchmarkTimeSeconds = 60;
