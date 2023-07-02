@@ -294,7 +294,7 @@ bool WBTxRx::process_received_data_packet(int wlan_idx,uint8_t radio_port,const 
   const uint8_t* encrypted_data_with_suffix=pkt_payload+sizeof(uint64_t);
   const auto encrypted_data_with_suffix_len = pkt_payload_size-sizeof(uint64_t);
   const auto res=m_decryptor->decrypt2(nonce,encrypted_data_with_suffix,encrypted_data_with_suffix_len,
-                                         decrypted->data(),decrypted->size());
+                                         decrypted->data());
   if(res!=-1){
     if(m_options.log_all_received_validated_packets){
       m_console->debug("Got valid packet nonce:{} wlan_idx:{} radio_port:{} size:{}",nonce,wlan_idx,radio_port,pkt_payload_size);

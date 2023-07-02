@@ -45,12 +45,11 @@ struct FECPayloadHdr{
 }__attribute__ ((packed));
 static_assert(sizeof(FECPayloadHdr)==8);
 
-// 1510-(13+24+9+16+2)
-//A: Any UDP with packet size <= 1466. For example x264 inside RTP or Mavlink.
-static constexpr const auto FEC_MAX_PACKET_SIZE = 1448-2;
-//static constexpr const auto FEC_MAX_PACKET_SIZE= WB_FRAME_MAX_PAYLOAD;
-static constexpr const auto FEC_MAX_PAYLOAD_SIZE = FEC_MAX_PACKET_SIZE - sizeof(FECPayloadHdr);
-static_assert(FEC_MAX_PAYLOAD_SIZE == 1446-8);
+// See WBTxRx
+static constexpr const auto MAX_PAYLOAD_BEFORE_FEC=1449;
+// The FEC stream encode adds an overhead, leaving X bytes to the application
+static constexpr const auto FEC_PACKET_MAX_PAYLOAD_SIZE=MAX_PAYLOAD_BEFORE_FEC-sizeof(FECPayloadHdr);
+static_assert(FEC_PACKET_MAX_PAYLOAD_SIZE==1441);
 
 // max 255 primary and secondary fragments together for now. Theoretically, this implementation has enough bytes in the header for
 // up to 15 bit fragment indices, 2^15=32768
@@ -90,7 +89,7 @@ class FECEncoder {
   void encode_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,int n_secondary_fragments);
   // Pre-allocated to have space for storing primary fragments (they are needed once the fec step needs to be performed)
   // and creating the wanted amount of secondary packets
-  std::array<std::array<uint8_t, FEC_MAX_PACKET_SIZE>,MAX_TOTAL_FRAGMENTS_PER_BLOCK> m_block_buffer{};
+  std::array<std::array<uint8_t, MAX_PAYLOAD_BEFORE_FEC>,MAX_TOTAL_FRAGMENTS_PER_BLOCK> m_block_buffer{};
   uint16_t m_curr_block_idx=0;
   AvgCalculator m_fec_block_encode_time;
   MinMaxAvg<std::chrono::nanoseconds> m_curr_fec_block_encode_time{};
@@ -178,7 +177,7 @@ class RxBlock {
   // for each fragment (via fragment_idx) store if it has been received yet
   std::vector<FragmentStatus> fragment_map;
   // holds all the data for all received fragments (if fragment_map says UNAVALIABLE at this position, content is undefined)
-  std::vector<std::array<uint8_t, FEC_MAX_PACKET_SIZE>> blockBuffer;
+  std::vector<std::array<uint8_t, MAX_PAYLOAD_BEFORE_FEC>> blockBuffer;
   // time point when the first fragment for this block was received (via addFragment() )
   std::optional<std::chrono::steady_clock::time_point> firstFragmentTimePoint = std::nullopt;
   // as soon as we know any of the fragments for this block, we know how many primary fragments this block contains

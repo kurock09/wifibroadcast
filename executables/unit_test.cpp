@@ -48,7 +48,7 @@ static void test_random_bs_fs_overhead_dropped(){
     std::vector<std::vector<uint8_t>> fragmented_frame;
     const auto n_fragments=GenericHelper::create_random_number_between(1,MAX_N_P_FRAGMENTS_PER_BLOCK);
     for(int j=0;j<n_fragments;j++){
-      const auto buff_size=GenericHelper::create_random_number_between(1,FEC_MAX_PAYLOAD_SIZE);
+      const auto buff_size=GenericHelper::create_random_number_between(1,FEC_PACKET_MAX_PAYLOAD_SIZE);
       //const auto buff_size=GenericHelper::create_random_number_between(12,12);
       auto buff=GenericHelper::createRandomDataBuffer(buff_size);
       fragmented_frame.push_back(buff);
@@ -197,12 +197,10 @@ static void test(const bool useGeneratedFiles) {
 	  decryptor.onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData) == true);
   // now encrypt a couple of packets and decrypt them again afterwards
   for (uint64_t nonce = 0; nonce < 20; nonce++) {
-	const auto data = GenericHelper::createRandomDataBuffer(FEC_MAX_PAYLOAD_SIZE);
-        const auto encrypted=encryptor.encryptPacket(nonce,data.data(),data.size(), nullptr);
-	const auto encrypted = encryptor.encryptPacket(nonce, data.data(), data.size(), wbDataHeader);
-	const auto
-		decrypted = decryptor.decryptPacket(nonce, encrypted.data(), encrypted.size(), wbDataHeader);
-	assert(decrypted != std::nullopt);
+	const auto data = GenericHelper::createRandomDataBuffer(FEC_PACKET_MAX_PAYLOAD_SIZE);
+        const auto encrypted=encryptor.encrypt3(nonce,data.data(),data.size());
+	const auto decrypted = decryptor.decrypt3(nonce, encrypted->data(), encrypted->size());
+	//assert(decrypted != std::nullopt);
 	assert(GenericHelper::compareVectors(data, *decrypted) == true);
   }
   std::cout << "encryption test passed\n";

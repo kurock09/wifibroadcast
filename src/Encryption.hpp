@@ -93,6 +93,12 @@ class Encryptor {
                                          (uint8_t *) &nonce, session_key.data());
     return (int)ciphertext_len;
   }
+  std::shared_ptr<std::vector<uint8_t>> encrypt3(const uint64_t nonce,const uint8_t *src,std::size_t src_len){
+    auto ret=std::make_shared<std::vector<uint8_t>>(src_len + crypto_aead_chacha20poly1305_ABYTES);
+    const auto size=encrypt2(nonce,src,src_len,ret->data());
+    assert(size==ret->size());
+    return ret;
+  }
  private:
   // tx->rx keypair
   std::array<uint8_t, crypto_box_SECRETKEYBYTES> tx_secretkey{};
@@ -184,7 +190,7 @@ class Decryptor {
     assert(decrypted.size() == decrypted_len);
     return decrypted;
   }
-  int decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest,int dest_len){
+  int decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest){
     unsigned long long mlen;
     int res=crypto_aead_chacha20poly1305_decrypt(dest, &mlen,
                                                    nullptr,
@@ -192,6 +198,12 @@ class Decryptor {
                                                    nullptr,0,
                                                    (uint8_t *) (&nonce), session_key.data());
     return res;
+  }
+  std::shared_ptr<std::vector<uint8_t>> decrypt3(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size){
+    auto ret=std::make_shared<std::vector<uint8_t>>(encrypted_size - crypto_aead_chacha20poly1305_ABYTES);
+    int res= decrypt2(nonce,encrypted,encrypted_size,ret->data());
+    assert(res==ret->size());
+    return ret;
   }
 };
 

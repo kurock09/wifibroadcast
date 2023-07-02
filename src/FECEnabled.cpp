@@ -28,7 +28,7 @@ void FECEncoder::encode_block(
     const auto& data_fragment=data_packets[i];
     //wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
     assert(data_fragment->size()>0);
-    assert(data_fragment->size()<=FEC_MAX_PAYLOAD_SIZE);
+    assert(data_fragment->size()<=FEC_PACKET_MAX_PAYLOAD_SIZE);
     header.fragment_idx=i;
     header.data_size=data_fragment->size();
     auto buffer_p=m_block_buffer[i].data();
@@ -39,7 +39,7 @@ void FECEncoder::encode_block(
     // zero out the remaining bytes such that FEC always sees zeroes
     // same is done on the rx. These zero bytes are never transmitted via wifi
     const auto writtenDataSize = sizeof(FECPayloadHdr) + data_fragment->size();
-    memset(buffer_p + writtenDataSize, 0, FEC_MAX_PACKET_SIZE - writtenDataSize);
+    memset(buffer_p + writtenDataSize, 0, MAX_PAYLOAD_BEFORE_FEC - writtenDataSize);
     max_packet_size = std::max(max_packet_size, data_fragment->size());
     // we can forward the data packet immediately via the callback
     if(outputDataCallback){
@@ -151,7 +151,7 @@ void RxBlock::fragment_copy_payload(const int fragment_idx, const uint8_t* data,
   // write the data (doesn't matter if FEC data or correction packet)
   memcpy(buff, payload_p,payload_s);
   // set the rest to zero such that FEC works
-  memset(buff+payload_s, 0, FEC_MAX_PACKET_SIZE - payload_s);
+  memset(buff+payload_s, 0, MAX_PAYLOAD_BEFORE_FEC - payload_s);
 }
 
 std::vector<uint16_t> RxBlock::pullAvailablePrimaryFragments(
@@ -251,7 +251,7 @@ void FECDecoder::forwardMissingPrimaryFragmentsIfAvailable(
   for (auto primaryFragmentIndex: indices) {
     const uint8_t* data=block.get_primary_fragment_data_p(primaryFragmentIndex);
     const int data_size=block.get_primary_fragment_data_size(primaryFragmentIndex);
-    if (data_size > FEC_MAX_PAYLOAD_SIZE || data_size <= 0) {
+    if (data_size > FEC_PACKET_MAX_PAYLOAD_SIZE || data_size <= 0) {
       wifibroadcast::log::get_default()->warn("corrupted packet on FECDecoder out ({}:{}) : {}B",block.getBlockIdx(),primaryFragmentIndex,data_size);
     } else {
       mSendDecodedPayloadCallback(data, data_size);

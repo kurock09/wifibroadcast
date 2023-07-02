@@ -64,7 +64,7 @@ bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet
 bool WBStreamTx::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
   assert(options.enable_fec);
   for(const auto& fragment:fragments){
-    if (fragment->empty() || fragment->size() > FEC_MAX_PAYLOAD_SIZE) {
+    if (fragment->empty() || fragment->size() > FEC_PACKET_MAX_PAYLOAD_SIZE) {
       m_console->warn("Fed fragment with incompatible size:{}",fragment->size());
       return false;
     }
