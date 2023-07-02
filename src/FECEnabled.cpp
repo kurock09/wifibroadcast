@@ -7,6 +7,8 @@
 void FECEncoder::encode_block(
     std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,
     int n_secondary_fragments) {
+  assert(data_packets.size()<=MAX_N_P_FRAGMENTS_PER_BLOCK);
+  assert(n_secondary_fragments<=MAX_N_S_FRAGMENTS_PER_BLOCK);
   const auto n_primary_fragments=data_packets.size();
   // nice to have statistic
   m_block_sizes.add(n_primary_fragments);
