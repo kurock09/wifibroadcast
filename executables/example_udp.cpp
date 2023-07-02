@@ -12,7 +12,9 @@
 
 /**
  * Simple example application that uses UDP as data input / output
- * Feed in udp packets on air -> get out udp packets on ground
+ * Feed in udp packets on air to port 5600 -> get out udp packets on ground on port 5601
+ * I use different in / out udp ports here in case you wanna use the application locally
+ * ( 2 cards talking, but on the same system)
  *
  * NOTE: The input stream can be protected by FEC - but this serves only demo purposes here
  * For proper usage of FEC during wifibroadcast video streaming (no latency overhead), please check out openhd.
@@ -79,7 +81,7 @@ int main(int argc, char *const *argv) {
     int last_udp_in_packet_ts_ms=MyTimeHelper:: get_curr_time_ms();
     // we need to buffer packets due to udp
     std::vector<std::shared_ptr<std::vector<uint8_t>>> block;
-    static constexpr auto M_FEC_K=8;
+    static constexpr auto M_FEC_K=8; // arbitrary chosen
     auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms,&enable_fec](const uint8_t *payload, const std::size_t payloadSize){
       last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
       if(enable_fec){
