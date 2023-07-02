@@ -33,6 +33,8 @@
  * and system 2 inject packets using WBTxRx on system 1 -> receive them
  * using WBTxRx on system 2 inject packets using WBTxRx on system 2
  * -> receive them using WBTxRx on system 1
+ *
+ * NOTE: Receiving of data is not started until startReceiving() is called !
  */
 class WBTxRx {
  public:
