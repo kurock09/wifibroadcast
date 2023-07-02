@@ -116,11 +116,10 @@ void benchmark_crypt(const Options &options) {
   while ((std::chrono::steady_clock::now() - testBegin) < std::chrono::seconds(options.benchmarkTimeSeconds)) {
 	for (int i = 0; i < N_BUFFERS; i++) {
 	  const auto buffer = randomBufferPot.getBuffer(i);
-	  uint8_t add = 1;
 	  durationBenchmark.start();
-	  const auto encrypted = encryptor.encryptPacket(nonce, buffer->data(), buffer->size(), add);
+	  const auto encrypted = encryptor.encrypt3(nonce, buffer->data(), buffer->size());
 	  durationBenchmark.stop();
-	  assert(encrypted.size() > 0);
+	  assert(encrypted->size() > 0);
 	  nonce++;
 	  //
 	  packetizedBenchmark.doneWithPacket(buffer->size());
