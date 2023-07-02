@@ -91,7 +91,8 @@ class FECEncoder {
   // Pre-allocated to have space for storing primary fragments (they are needed once the fec step needs to be performed)
   // and creating the wanted amount of secondary packets
   std::array<std::array<uint8_t, MAX_PAYLOAD_BEFORE_FEC>,MAX_TOTAL_FRAGMENTS_PER_BLOCK> m_block_buffer{};
-  uint16_t m_curr_block_idx=0;
+  uint32_t m_curr_block_idx=0;
+  static_assert(sizeof(m_curr_block_idx)==sizeof(FECPayloadHdr::block_idx));
   AvgCalculator m_fec_block_encode_time;
   MinMaxAvg<std::chrono::nanoseconds> m_curr_fec_block_encode_time{};
   BaseAvgCalculator<uint16_t> m_block_sizes{};
