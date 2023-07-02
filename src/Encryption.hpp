@@ -57,37 +57,10 @@ class Encryptor {
       throw std::runtime_error("Unable to make session key!");
     }
   }
-  // Encrypt the payload using a public nonce. (aka sequence number)
-  // The nonce is not included in the raw encrypted payload, but used for the checksum stuff to make sure packet cannot be tampered with
-  // @param ad: Header that is included for calculating the checksum, but it is up to the application to also transmit the header,
-  // presumably right in front of the actual payload
-  template<class T>
-  std::vector<uint8_t> encryptPacket(const uint64_t nonce,
-                                     const uint8_t *payload,
-                                     std::size_t payloadSize,
-                                     const T &ad) {
-    if (DISABLE_ENCRYPTION_FOR_PERFORMANCE) {
-      return std::vector<uint8_t>(payload, payload + payloadSize);
-    }
-    std::vector<uint8_t> encryptedData = std::vector<uint8_t>(payloadSize + crypto_aead_chacha20poly1305_ABYTES);
-    long long unsigned int ciphertext_len;
-    crypto_aead_chacha20poly1305_encrypt(encryptedData.data(), &ciphertext_len,
-                                         payload, payloadSize,
-                                         (uint8_t *) &ad, sizeof(ad),
-                                         nullptr,
-                                         (uint8_t *) (&nonce), session_key.data());
-    // we allocate the right size in the beginning, but check if ciphertext_len is actually matching what we calculated
-    // (the documentation says 'write up to n bytes' but they probably mean (write exactly n bytes unless an error occurs)
-    assert(encryptedData.size() == ciphertext_len);
-    return encryptedData;
-  }
-  int encrypt2(const uint64_t nonce,
-                const uint8_t *src,
-                std::size_t src_len,
-                uint8_t* dest){
+  int encrypt2(const uint64_t nonce,const uint8_t *src,std::size_t src_len,uint8_t* dest){
     long long unsigned int ciphertext_len;
     crypto_aead_chacha20poly1305_encrypt(dest, &ciphertext_len,
-                                        src, src_len,
+                                         src, src_len,
                                          (uint8_t *)nullptr, 0,
                                          nullptr,
                                          (uint8_t *) &nonce, session_key.data());
