@@ -192,6 +192,10 @@ class WBTxRx {
   // If each iteration pulls too many packets out your CPU is most likely too slow
   AvgCalculatorSize m_n_packets_polled_pcap;
   AvgCalculator m_packet_host_latency;
+  struct SessionKeyPacket{
+    std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};  // random data
+    std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{}; // encrypted session key
+  };
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();

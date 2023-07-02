@@ -234,13 +234,13 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   }
   const auto radio_port=parsedPacket->ieee80211Header->getRadioPort();
   if(radio_port==RADIO_PORT_SESSION_KEY_PACKETS){
-    if (pkt_payload_size != WBSessionKeyPacket::SIZE_BYTES) {
+    if (pkt_payload_size != sizeof(SessionKeyPacket)) {
       if(m_options.advanced_debugging_rx){
         m_console->warn("Cannot be session key packet - size mismatch {}",pkt_payload_size);
       }
       return;
     }
-    WBSessionKeyPacket &sessionKeyPacket = *((WBSessionKeyPacket *) parsedPacket->payload);
+    SessionKeyPacket &sessionKeyPacket = *((SessionKeyPacket*) parsedPacket->payload);
     if (m_decryptor->onNewPacketSessionKeyData(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData)) {
       m_console->debug("Initializing new session.");
       m_rx_stats.n_received_valid_session_key_packets++;
@@ -354,7 +354,7 @@ void WBTxRx::send_session_key() {
   Ieee80211Header tmp_ieee_hdr=mIeee80211Header;
   tmp_ieee_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
   auto packet=wifibroadcast::pcap_helper::create_radiotap_wifi_packet(tmp_radiotap_header,tmp_ieee_hdr,
-                                                          (uint8_t *)&m_tx_sess_key_packet, WBSessionKeyPacket::SIZE_BYTES);
+                                                          (uint8_t *)&m_tx_sess_key_packet, sizeof(SessionKeyPacket));
   pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
   const auto len_injected=pcap_inject(tx,packet.data(),packet.size());
   if (len_injected != (int) packet.size()) {
