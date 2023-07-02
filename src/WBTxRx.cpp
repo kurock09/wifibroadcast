@@ -131,9 +131,9 @@ void WBTxRx::loop_receive_packets() {
 
     if (rc == 0) {
       // timeout expired
-      //if(m_options.advanced_debugging_rx){
+      if(m_options.advanced_debugging_rx){
         m_console->debug("Timeout - no packet after 1 second");
-      //}
+      }
       continue;
     }
     // TODO Optimization: If rc>1 we have data on more than one wifi card. It would be better to alternating process a couple of packets from card 1, then card 2 or similar
