@@ -25,7 +25,6 @@
 #include <string>
 
 #include "../src/FECEnabled.h"
-#include "../src/wifibroadcast.hpp"
 //#include "../src/FECEnabled.hpp"
 
 #include "../src/HelperSources/Helper.hpp"
@@ -186,7 +185,11 @@ static void test(const bool useGeneratedFiles) {
 
   Encryptor encryptor{encKey};
   Decryptor decryptor{decKey};
-  WBSessionKeyPacket sessionKeyPacket;
+  struct SessionStuff{
+    std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};  // random data
+    std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{};
+  };
+  SessionStuff sessionKeyPacket;
   // make session key (tx)
   encryptor.makeNewSessionKey(sessionKeyPacket.sessionKeyNonce, sessionKeyPacket.sessionKeyData);
   // and "receive" session key (rx)
@@ -195,10 +198,10 @@ static void test(const bool useGeneratedFiles) {
   // now encrypt a couple of packets and decrypt them again afterwards
   for (uint64_t nonce = 0; nonce < 20; nonce++) {
 	const auto data = GenericHelper::createRandomDataBuffer(FEC_MAX_PAYLOAD_SIZE);
-	const WBDataHeader wbDataHeader(nonce,0);
-	const auto encrypted = encryptor.encryptPacket(wbDataHeader.nonce, data.data(), data.size(), wbDataHeader);
+        const auto encrypted=encryptor.encryptPacket(nonce,data.data(),data.size(), nullptr);
+	const auto encrypted = encryptor.encryptPacket(nonce, data.data(), data.size(), wbDataHeader);
 	const auto
-		decrypted = decryptor.decryptPacket(wbDataHeader.nonce, encrypted.data(), encrypted.size(), wbDataHeader);
+		decrypted = decryptor.decryptPacket(nonce, encrypted.data(), encrypted.size(), wbDataHeader);
 	assert(decrypted != std::nullopt);
 	assert(GenericHelper::compareVectors(data, *decrypted) == true);
   }

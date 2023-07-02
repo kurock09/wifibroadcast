@@ -13,7 +13,6 @@
 #include "HelperSources/TimeHelper.hpp"
 #include "WBTxRx.h"
 #include "wifibroadcast-spdlog.h"
-#include "wifibroadcast.hpp"
 
 #include "../moodycamel/concurrentqueue/blockingconcurrentqueue.h"
 #include "../moodycamel/readerwriterqueue/readerwritercircularbuffer.h"

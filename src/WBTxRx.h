@@ -12,11 +12,11 @@
 #include <utility>
 
 #include "Encryption.hpp"
+#include "Ieee80211Header.hpp"
 #include "RSSIForWifiCard.hpp"
 #include "RadiotapHeader.hpp"
 #include "SeqNrHelper.hpp"
 #include "TimeHelper.hpp"
-#include "wifibroadcast.hpp"
 
 /**
  * Wraps one or more wifi card in monitor mode
@@ -148,6 +148,21 @@ class WBTxRx {
    RxStatsPerCard get_rx_stats_for_card(int card_index);
    // used by openhd during frequency scan
    void rx_reset_stats();
+  public:
+   // Session key used for encrypting outgoing packets
+   struct SessionKeyPacket{
+     std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};  // random data
+     std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{}; // encrypted session key
+   };
+   // The final packet size ( radiotap header + iee80211 header + payload ) is never bigger than that
+   // the reasoning behind this value: https://github.com/svpcom/wifibroadcast/issues/69
+   static constexpr const auto PCAP_MAX_PACKET_SIZE = 1510;
+   // This is the max number of bytes usable when injecting
+   static constexpr const auto RAW_WIFI_FRAME_MAX_PAYLOAD_SIZE = (PCAP_MAX_PACKET_SIZE - RadiotapHeader::SIZE_BYTES - Ieee80211Header::SIZE_BYTES);
+   static_assert(RAW_WIFI_FRAME_MAX_PAYLOAD_SIZE==1473);
+   // and we use some bytes of that for encryption / packet validation
+   static constexpr const auto MAX_PACKET_PAYLOAD_SIZE=RAW_WIFI_FRAME_MAX_PAYLOAD_SIZE-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES;
+   static_assert(MAX_PACKET_PAYLOAD_SIZE==1449);
  private:
   const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;
@@ -159,10 +174,10 @@ class WBTxRx {
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
   int m_highest_rssi_index=0;
-  // Session key used for encrypting outgoing packets
-  WBSessionKeyPacket m_tx_sess_key_packet;
+  SessionKeyPacket m_tx_sess_key_packet;
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
+  static constexpr auto SESSION_KEY_ANNOUNCE_DELTA=std::chrono::seconds(1);
   struct PcapTxRx{
     pcap_t *tx= nullptr;
     pcap_t *rx= nullptr;
@@ -192,10 +207,6 @@ class WBTxRx {
   // If each iteration pulls too many packets out your CPU is most likely too slow
   AvgCalculatorSize m_n_packets_polled_pcap;
   AvgCalculator m_packet_host_latency;
-  struct SessionKeyPacket{
-    std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};  // random data
-    std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{}; // encrypted session key
-  };
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();
