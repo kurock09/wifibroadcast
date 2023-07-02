@@ -19,7 +19,10 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
   m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(m_wifi_cards),m_options.set_direction);
   m_receive_pollfds.resize(m_wifi_cards.size());
   m_rx_packet_stats.resize(m_wifi_cards.size());
-  //m_seq_nr_per_card.resize(m_wifi_cards.size());
+  for(int i=0;i<m_wifi_cards.size();i++){
+    auto tmp=std::make_shared<seq_nr::Helper>();
+    m_seq_nr_per_card.push_back(tmp);
+  }
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
     PcapTxRx pcapTxRx{};
@@ -307,6 +310,10 @@ bool WBTxRx::process_received_data_packet(int wlan_idx,uint8_t radio_port,const 
       m_rx_stats.curr_packet_loss=m_seq_nr_helper.get_current_loss_percent();
       //m_console->debug("packet loss:{}",m_seq_nr_helper.get_current_loss_percent());
     }
+    // Calculate sequence number stats per card
+    auto& seq_nr_for_card=m_seq_nr_per_card.at(wlan_idx);
+    seq_nr_for_card->on_new_sequence_number((uint16_t)nonce);
+    m_rx_packet_stats.at(wlan_idx).curr_packet_loss=seq_nr_for_card->get_current_loss_percent();
     return true;
   }
   //m_console->debug("Got non-wb packet {}",radio_port);

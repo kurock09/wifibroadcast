@@ -145,6 +145,7 @@ class WBTxRx {
      RSSIForWifiCard rssi_for_wifi_card{};
      int64_t count_p_any=0;
      int64_t count_p_valid=0;
+     int32_t curr_packet_loss=-1;
    };
    TxStats get_tx_stats();
    RxStats get_rx_stats();
@@ -197,7 +198,7 @@ class WBTxRx {
   // for calculating the packet loss on the rx side
   seq_nr::Helper m_seq_nr_helper;
   // for calculating the loss per rx card (when multiple rx cards are used)
-  //std::vector<seq_nr::Helper> m_seq_nr_per_card;
+  std::vector<std::shared_ptr<seq_nr::Helper>> m_seq_nr_per_card;
   OUTPUT_DATA_CALLBACK m_output_cb= nullptr;
   RxStats m_rx_stats{};
   TxStats m_tx_stats{};
