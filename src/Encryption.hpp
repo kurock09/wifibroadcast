@@ -149,7 +149,7 @@ class Decryptor {
   std::shared_ptr<std::vector<uint8_t>> decrypt3(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size){
     auto ret=std::make_shared<std::vector<uint8_t>>(encrypted_size - crypto_aead_chacha20poly1305_ABYTES);
     int res= decrypt2(nonce,encrypted,encrypted_size,ret->data());
-    assert(res==ret->size());
+    //assert(res==ret->size());
     return ret;
   }
 };

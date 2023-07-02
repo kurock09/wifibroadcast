@@ -104,80 +104,10 @@ static void test_random_bs_fs_overhead_dropped(){
   wifibroadcast::log::get_default()->debug("test_random_bs_fs_overhead_dropped end");
 }
 
-// test without packet loss, dynamic block size aka
-// randomly end the block at some time
-static void testWithoutPacketLossDynamicBlockSize() {
-  /*std::cout << "Test without packet loss dynamic block size\n";
-  constexpr auto N_BLOCKS = 2000;
-  const auto testIn = GenericHelper::createRandomDataBuffers(N_BLOCKS, FEC_MAX_PAYLOAD_SIZE, FEC_MAX_PAYLOAD_SIZE);
-  std::vector<std::vector<uint8_t>> testOut;
-  FECEncoder encoder(MAX_N_P_FRAGMENTS_PER_BLOCK, 50);
-  FECDecoder decoder{10};
-  const auto cb1 = [&decoder](const uint64_t nonce, const uint8_t *payload, const std::size_t payloadSize)mutable {
-	decoder.validateAndProcessPacket(nonce, std::vector<uint8_t>(payload, payload + payloadSize));
-  };
-  const auto cb2 = [&testOut](const uint8_t *payload, std::size_t payloadSize)mutable {
-	testOut.emplace_back(payload, payload + payloadSize);
-  };
-  encoder.outputDataCallback = cb1;
-  decoder.mSendDecodedPayloadCallback = cb2;
-  for (std::size_t i = 0; i < testIn.size(); i++) {
-	//std::cout<<"Step\n";
-	const bool endBlock = (rand() % 10) == 0;
-	const auto &in = testIn[i];
-	encoder.encodePacket(in.data(), in.size(), endBlock);
-	const auto &out = testOut[i];
-	assert(GenericHelper::compareVectors(in, out) == true);
-  }*/
-}
-// Put packets in in such a order that the rx queue is tested
-static void testRxQueue(const int k, const int percentage) {
-  /*std::cout << "Test rx queue. K:" << k << " P:" << percentage << "\n";
-  const auto n = FECEncoder::calculateN(k, percentage);
-  constexpr auto QUEUE_SIZE = 10;
-  const auto
-	  testIn = GenericHelper::createRandomDataBuffers(QUEUE_SIZE * k, FEC_MAX_PAYLOAD_SIZE, FEC_MAX_PAYLOAD_SIZE);
-  FECEncoder encoder(k, percentage);
-  FECDecoder decoder{10};
-  // begin test
-  std::vector<std::pair<uint64_t, std::vector<uint8_t>>> fecPackets;
-  const auto cb1 = [&fecPackets](const uint64_t nonce, const uint8_t *payload, const std::size_t payloadSize)mutable {
-	fecPackets.emplace_back(nonce, std::vector<uint8_t>(payload, payload + payloadSize));
-  };
-  encoder.outputDataCallback = cb1;
-  // process all input packets
-  for (const auto &in: testIn) {
-	encoder.encodePacket(in.data(), in.size());
-  }
-  // now add them to the decoder (queue):
-  std::vector<std::vector<uint8_t>> testOut;
-  const auto cb2 = [&testOut](const uint8_t *payload, std::size_t payloadSize)mutable {
-	testOut.emplace_back(payload, payload + payloadSize);
-  };
-  decoder.mSendDecodedPayloadCallback = cb2;
-  // add fragments (primary fragments only to not overcomplicate things)
-  // but in the following order:
-  // block 0, fragment 0, block 1, fragment 0, block 2, fragment 0, ... until block X, fragment n
-  for (int frIdx = 0; frIdx < k; frIdx++) {
-	for (int i = 0; i < QUEUE_SIZE; i++) {
-	  const auto idx = i * n + frIdx;
-	  std::cout << "adding" << idx << "\n";
-	  const auto &packet = fecPackets.at(idx);
-	  decoder.validateAndProcessPacket(packet.first, packet.second);
-	}
-  }
-  // and then check if in and out match
-  for (std::size_t i = 0; i < testIn.size(); i++) {
-	//std::cout<<"Step\n";
-	const auto &in = testIn[i];
-	const auto &out = testOut[i];
-	GenericHelper::assertVectorsEqual(in, out);
-  }*/
-}
-
 }
 
 namespace TestEncryption {
+
 static void test(const bool useGeneratedFiles) {
   std::cout << "Using generated keypair (default seed otherwise):" << (useGeneratedFiles ? "y" : "n") << "\n";
   std::optional<std::string> encKey = useGeneratedFiles ? std::optional<std::string>("gs.key") : std::nullopt;
@@ -225,6 +155,7 @@ int main(int argc, char *argv[]) {
 	}
   }
   print_optimization_method();
+
   TestFEC::test_random_bs_fs_overhead_dropped();
 
   try {
@@ -233,41 +164,6 @@ int main(int argc, char *argv[]) {
 	  test_gf();
 	  test_fec();
 	  testFecCPlusPlusWrapperX();
-	  const int N_PACKETS = 1200;
-	  // With these fec params "testWithoutPacketLoss" is not possible
-	  /*const std::vector<std::pair<unsigned int, unsigned int>> fecParams1 = {
-		  {1, 0}, {1, 100},
-		  {2, 0}, {2, 50}, {2, 100}
-	  };
-	  for (const auto &fecParam: fecParams1) {
-		const auto k = fecParam.first;
-		const auto p = fecParam.second;
-		TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
-		TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
-	  }*/
-	  // only test with FEC enabled
-	  const std::vector<std::pair<unsigned int, unsigned int>> fecParams = {
-		  {1, 200},
-		  {2, 100}, {2, 200},
-		  {4, 100}, {4, 200},
-		  {6, 50}, {6, 100}, {6, 200},
-		  {8, 50}, {8, 100}, {8, 200},
-		  {10, 30}, {10, 50}, {10, 100},
-		  {40, 30}, {40, 50}, {40, 100},
-		  {100, 30}, {100, 40}, {100, 50}, {100, 60},
-		  {120, 50}
-	  };
-	  for (const auto &fecParam: fecParams) {
-		const auto k = fecParam.first;
-		const auto p = fecParam.second;
-		/*TestFEC::testWithoutPacketLossFixedPacketSize(k, p, N_PACKETS);
-		TestFEC::testWithoutPacketLossDynamicPacketSize(k, p, N_PACKETS);*/
-		TestFEC::testRxQueue(k, p);
-		for (int dropMode = 1; dropMode < 2; dropMode++) {
-		  //TestFEC::testWithPacketLossButEverythingIsRecoverable(k, p, N_PACKETS, dropMode);
-		}
-	  }
-	  TestFEC::testWithoutPacketLossDynamicBlockSize();
 	}
 	if (test_mode == 0 || test_mode == 2) {
 	  //
