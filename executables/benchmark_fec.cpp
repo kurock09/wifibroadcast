@@ -63,9 +63,6 @@ struct Options {
   int benchmarkTimeSeconds = 60;
 };
 
-// How many buffers we allocate (must be enough to simulate a constant flow of random data, but too many packets might result in OOM)
-static std::size_t N_ALLOCATED_BUFFERS = 1024;
-
 void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
   assert(options.benchmarkType == BENCHMARK_FEC_ENCODE);
 
@@ -78,7 +75,7 @@ void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
   PacketizedBenchmark packetizedBenchmark("FEC_ENCODE", (100 + options.FEC_PERCENTAGE) / 100.0f);
   DurationBenchmark durationBenchmark("FEC_BLOCK_ENCODE", options.PACKET_SIZE * options.FEC_K);
   const auto cb = [&packetizedBenchmark](const uint8_t* packet,int packet_len)mutable {
-    // do nothing here. Let's hope the compiler doesn't notice.
+    // called each time we got a new 'packet'
     packetizedBenchmark.doneWithPacket(packet_len);
   };
   encoder.outputDataCallback = cb;
@@ -95,7 +92,6 @@ void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
   }
   packetizedBenchmark.end();
   durationBenchmark.print();
-  //printDetail();
 }
 
 
@@ -141,13 +137,14 @@ void benchmark_crypt(const Options &options,const bool encrypt) {
             durationBenchmark.start();
             const auto encrypted = encryptor.encrypt3(nonce, buffer->data(), buffer->size());
             durationBenchmark.stop();
-            assert(encrypted->size() > 0);
+            assert(!encrypted->empty());
             nonce++;
             packetizedBenchmark.doneWithPacket(buffer->size());
           }else{
             const auto& encrypted=encrypted_packets_buff.at(i);
             durationBenchmark.start();
             auto decrypted=decryptor.decrypt3(encrypted.nonce,encrypted.data->data(),encrypted.data->size());
+            assert(!decrypted->empty());
             durationBenchmark.stop();
             packetizedBenchmark.doneWithPacket(decrypted->size());
           }
