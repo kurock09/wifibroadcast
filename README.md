@@ -16,9 +16,9 @@ Compile with cmake (./build_cmake.sh)
 ## Examples
 NOTE: You need to first enable monitor mode on your card(s) and the card driver
 needs to support active and passive monitor mode (listening & injecting packets)
-1) example_hello: [link](https://github.com/OpenHD/wifibroadcast/blob/master/executables/benchmark_fec.cpp) \
+1) example_hello: [link](https://github.com/OpenHD/wifibroadcast/blob/master/executables/example_hello.cpp) \
     Bidirectional communication between air and ground unit 
-2) benchmark_fec: [link](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/executables/example_hello.cpp) \
+2) benchmark_fec: [link](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/executables/benchmark_fec.cpp) \
     Gives a quick overview over FEC performance on your platform 
 3) example_udp: [link](https://github.com/OpenHD/wifibroadcast/blob/exp-threading/executables/example_udp.cpp) \
     Simple unidirectional UDP streaming application, can be used for
