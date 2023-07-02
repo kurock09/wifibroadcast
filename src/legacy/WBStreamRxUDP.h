@@ -15,7 +15,7 @@ class WBStreamRxUDP{
  public:
   WBStreamRxUDP(std::shared_ptr<WBTxRx> txrx,WBStreamRx::Options options,int udp_port_out){
    m_udp_out=std::make_unique<SocketHelper::UDPForwarder>(
-        SocketHelper::ADDRESS_LOCALHOST,5601);
+        SocketHelper::ADDRESS_LOCALHOST,udp_port_out);
     wb_rx=std::make_unique<WBStreamRx>(txrx,options);
     auto cb=[this](const uint8_t *payload, const std::size_t payloadSize){
       //console->debug("Got data {}",payloadSize);
