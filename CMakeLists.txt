@@ -9,7 +9,7 @@ include(WBLib.cmake)
 add_executable(wfb_keygen executables/wfb_keygen.c)
 target_link_libraries(wfb_keygen  ${WB_TARGET_LINK_LIBRARIES})
 
-add_executable(benchmark_fec executables/benchmark_fec.cpp)
+add_executable(benchmark_fec executables/benchmark.cpp)
 target_link_libraries(benchmark_fec  ${WB_TARGET_LINK_LIBRARIES})
 
 add_executable(udp_generator_validator executables/udp_generator_validator.cpp)

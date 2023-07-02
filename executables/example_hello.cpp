@@ -16,6 +16,7 @@
  * On success, you should see the air unit talking to the ground unit and vice versa.
  *
  * NOTE: Card(s) need to be in monitor mode & on match on the selected frequency !
+ * NOTE: This example is as simple as possible, and therefore doesn't even need to use the WBStreamTX / WBStreamRX pair
  */
 int main(int argc, char *const *argv) {
   std::string card="wlxac9e17596103";
