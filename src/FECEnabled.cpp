@@ -27,7 +27,7 @@ void FECEncoder::encode_block(
   for(int i=0;i<data_packets.size();i++){
     const auto& data_fragment=data_packets[i];
     //wifibroadcast::log::get_default()->debug("In:{}",(int)data_fragment->size());
-    assert(data_fragment->size()>0);
+    assert(!data_fragment->empty());
     assert(data_fragment->size()<=FEC_PACKET_MAX_PAYLOAD_SIZE);
     header.fragment_idx=i;
     header.data_size=data_fragment->size();
