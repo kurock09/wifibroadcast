@@ -72,7 +72,7 @@ class FECDisabledDecoder {
       // not a valid packet
       return ;
     }
-    FECDisabledHeader* hdr=(FECDisabledHeader*)data;
+    auto* hdr=(FECDisabledHeader*)data;
     const uint8_t* payload=data+sizeof(FECDisabledHeader);
     const auto payload_size=len-sizeof(FECDisabledHeader);
     process_packet_seq_nr_and_payload(hdr->sequence_number,payload,payload_size);
@@ -80,7 +80,7 @@ class FECDisabledDecoder {
   //No duplicates, but packets out of order are possible
   //counting lost packets doesn't work in this mode. It should be done by the upper level
   //saves the last FEC_DISABLED_MAX_SIZE_OF_MAP sequence numbers. If the sequence number of a new packet is already inside the map, it is discarded (duplicate)
-  void process_packet_seq_nr_and_payload(int64_t packetSeq,const uint8_t* payload,int payload_len){
+  void process_packet_seq_nr_and_payload(uint64_t packetSeq,const uint8_t* payload,std::size_t payload_len){
     assert(mSendDecodedPayloadCallback);
     if (first_ever_packet) {
       // first ever packet. Map should be empty
