@@ -15,6 +15,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <optional>
+#include <unistd.h>
 
 #include "Helper.hpp"
 #include "TimeHelper.hpp"
