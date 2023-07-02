@@ -37,16 +37,19 @@
 // NOTE: Does not take WIFI card throughput into account
 
 
-//TODO: Decode only is not implemented yet.
-enum BenchmarkType { FEC_ENCODE = 0, FEC_DECODE = 1, ENCRYPT = 2, DECRYPT = 3 };
-static std::string benchmarkTypeReadable(const BenchmarkType value) {
+static constexpr auto BENCHMARK_FEC_ENCODE=0;
+static constexpr auto BENCHMARK_FEC_DECODE=1;
+static constexpr auto BENCHMARK_ENCRYPT=2;
+static constexpr auto BENCHMARK_DECRYPT=3;
+static std::string benchmarkTypeReadable(const int value) {
   switch (value) {
-	case FEC_ENCODE:return "FEC_ENCODE";
-	case FEC_DECODE:return "FEC_DECODE";
-	  //case ENCODE_AND_DECODE:return "ENCODE_AND_DECODE";
-	case ENCRYPT:return "ENCRYPT";
-	case DECRYPT:return "DECRYPT";
-	default:return "ERROR";
+	case BENCHMARK_FEC_ENCODE:return "FEC_ENCODE";
+	case BENCHMARK_FEC_DECODE:return "FEC_DECODE";
+        case BENCHMARK_ENCRYPT:return "ENCRYPT";
+	case BENCHMARK_DECRYPT:return "DECRYPT";
+	default:
+          assert(false);
+          return "ERROR";
   }
 }
 
@@ -55,7 +58,7 @@ struct Options {
   int PACKET_SIZE = FEC_PACKET_MAX_PAYLOAD_SIZE;
   int FEC_K = 10;
   int FEC_PERCENTAGE = 50;
-  BenchmarkType benchmarkType = BenchmarkType::FEC_ENCODE;
+  int benchmarkType = BENCHMARK_FEC_ENCODE;
   // How long the benchmark will take
   int benchmarkTimeSeconds = 60;
 };
@@ -64,7 +67,7 @@ struct Options {
 static std::size_t N_ALLOCATED_BUFFERS = 1024;
 
 void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
-  assert(options.benchmarkType == FEC_ENCODE);
+  assert(options.benchmarkType == BENCHMARK_FEC_ENCODE);
 
   std::vector<std::vector<std::shared_ptr<std::vector<uint8_t>>>> fragments_list_in;
   for(int i=0;i<100;i++){
@@ -95,43 +98,63 @@ void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
   //printDetail();
 }
 
-// TODO: implement decryption benchmark
-void benchmark_crypt(const Options &options) {
-  assert(options.benchmarkType == ENCRYPT || options.benchmarkType == DECRYPT);
+
+// Simple benchmark for encryption / decryption performance
+void benchmark_crypt(const Options &options,const bool encrypt) {
+  assert(options.benchmarkType == BENCHMARK_ENCRYPT || options.benchmarkType == BENCHMARK_DECRYPT);
   Encryptor encryptor{std::nullopt};
-  std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce;
-  std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData;
+  Decryptor decryptor{std::nullopt};
+  std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};
+  std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{};
   encryptor.makeNewSessionKey(sessionKeyNonce, sessionKeyData);
+  decryptor.onNewPacketSessionKeyData(sessionKeyNonce,sessionKeyData);
 
   constexpr auto N_BUFFERS = 1000;
-  RandomBufferPot randomBufferPot{N_BUFFERS, 1466};
-  uint64_t nonce = 0;
+  RandomBufferPot randomBufferPot{N_BUFFERS, (std::size_t)options.PACKET_SIZE};
 
+  struct EncryptedPacket{
+      uint64_t nonce;
+      std::shared_ptr<std::vector<uint8_t>> data;
+  };
+  std::vector<EncryptedPacket> encrypted_packets_buff;
+  if(!encrypt){
+      // encrypt the packets and store them for later use, me measure decryption throughput
+      for(int i=0;i<N_BUFFERS;i++){
+          auto buf=randomBufferPot.getBuffer(i);
+          auto encrypted=encryptor.encrypt3(i,buf->data(),buf->size());
+          EncryptedPacket encryptedPacket{(uint64_t)i,encrypted};
+          encrypted_packets_buff.push_back(encryptedPacket);
+      }
+  }
+  const auto tag=encrypt ? "Encrypt" : "Decrypt";
   PacketizedBenchmark packetizedBenchmark(benchmarkTypeReadable(options.benchmarkType), 1.0); // roughly 1:1
-  DurationBenchmark durationBenchmark("ENC", options.PACKET_SIZE);
+  DurationBenchmark durationBenchmark(tag, options.PACKET_SIZE);
 
   const auto testBegin = std::chrono::steady_clock::now();
   packetizedBenchmark.begin();
 
+  uint64_t nonce=0;
   while ((std::chrono::steady_clock::now() - testBegin) < std::chrono::seconds(options.benchmarkTimeSeconds)) {
-	for (int i = 0; i < N_BUFFERS; i++) {
-	  const auto buffer = randomBufferPot.getBuffer(i);
-	  durationBenchmark.start();
-	  const auto encrypted = encryptor.encrypt3(nonce, buffer->data(), buffer->size());
-	  durationBenchmark.stop();
-	  assert(encrypted->size() > 0);
-	  nonce++;
-	  //
-	  packetizedBenchmark.doneWithPacket(buffer->size());
-	}
+      for (int i = 0; i < N_BUFFERS; i++) {
+          if(encrypt){
+            const auto buffer = randomBufferPot.getBuffer(i);
+            durationBenchmark.start();
+            const auto encrypted = encryptor.encrypt3(nonce, buffer->data(), buffer->size());
+            durationBenchmark.stop();
+            assert(encrypted->size() > 0);
+            nonce++;
+            packetizedBenchmark.doneWithPacket(buffer->size());
+          }else{
+            const auto& encrypted=encrypted_packets_buff.at(i);
+            durationBenchmark.start();
+            auto decrypted=decryptor.decrypt3(encrypted.nonce,encrypted.data->data(),encrypted.data->size());
+            durationBenchmark.stop();
+            packetizedBenchmark.doneWithPacket(decrypted->size());
+          }
+      }
   }
   packetizedBenchmark.end();
   durationBenchmark.print();
-}
-
-void benchmark_decode(const Options &options) {
-  assert(options.benchmarkType == FEC_DECODE);
-  // TDOD
 }
 
 int main(int argc, char *const *argv) {
@@ -150,9 +173,7 @@ int main(int argc, char *const *argv) {
 		break;
 	  case 'p':options.FEC_PERCENTAGE = atoi(optarg);
 		break;
-	  case 'x': {
-		options.benchmarkType = (BenchmarkType)atoi(optarg);
-	  }
+	  case 'x': options.benchmarkType = atoi(optarg);
 		break;
 	  case 't':options.benchmarkTimeSeconds = atoi(optarg);
 		break;
@@ -167,23 +188,23 @@ int main(int argc, char *const *argv) {
   std::cout << "Benchmark type: " << options.benchmarkType << "(" << benchmarkTypeReadable(options.benchmarkType)
 			<< ")\n";
   std::cout << "PacketSize: " << options.PACKET_SIZE << " B\n";
-  std::cout << "FEC_K: " << options.FEC_K << "\n";
-  std::cout << "FEC_PERCENTAGE: " << options.FEC_PERCENTAGE << "\n";
+  if(options.benchmarkType==BENCHMARK_FEC_ENCODE || options.benchmarkType==BENCHMARK_FEC_DECODE){
+        std::cout << "FEC_K: " << options.FEC_K << "\n";
+        std::cout << "FEC_PERCENTAGE: " << options.FEC_PERCENTAGE << "\n";
+  }
   std::cout << "Benchmark time: " << options.benchmarkTimeSeconds << " s\n";
   switch (options.benchmarkType) {
-	case FEC_ENCODE:
+	case BENCHMARK_FEC_ENCODE:
           benchmark_fec_encode(options);
 	  break;
-	case FEC_DECODE:
-	  //benchmark_fec_decode(options);
-	  std::cout << "Unimplemented\n";
+	case BENCHMARK_FEC_DECODE:
+	  std::cout << "Unimplemented"<<std::endl;
 	  break;
-	case ENCRYPT:
-          benchmark_crypt(options);
+	case BENCHMARK_ENCRYPT:
+          benchmark_crypt(options, false);
 	  break;
-	case DECRYPT:
-	  //benchmark_crypt(options);
-	  std::cout << "Unimplemented\n";
+        case BENCHMARK_DECRYPT:
+	  benchmark_crypt(options, true);
 	  break;
   }
   return 0;
