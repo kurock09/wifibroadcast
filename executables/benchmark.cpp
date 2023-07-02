@@ -32,10 +32,9 @@
 #include <sstream>
 #include <list>
 
-// Test the FEC encoding / decoding performance (throughput) of this system
-// Basically measures the throughput of encoding,decoding or en&decoding FEC packets on one CPU core
+// Test the FEC encoding / decoding and Encryption / Decryption performance (throughput) of this system
+// Gives a hint on max possible FEC K target(s) for this platform
 // NOTE: Does not take WIFI card throughput into account
-
 
 static constexpr auto BENCHMARK_FEC_ENCODE=0;
 static constexpr auto BENCHMARK_FEC_DECODE=1;
@@ -56,10 +55,10 @@ static std::string benchmarkTypeReadable(const int value) {
 struct Options {
   // size of each packet
   int PACKET_SIZE = FEC_PACKET_MAX_PAYLOAD_SIZE;
-  int FEC_K = 10;
-  int FEC_PERCENTAGE = 50;
+  int FEC_K = 10; // not used when testing encryption / decryption
+  int FEC_PERCENTAGE = 50; // not used when testing encryption / decryption
   int benchmarkType = BENCHMARK_FEC_ENCODE;
-  // How long the benchmark will take
+  // How long the benchmark will run
   int benchmarkTimeSeconds = 60;
 };
 
