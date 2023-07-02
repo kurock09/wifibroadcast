@@ -78,8 +78,12 @@ int main(int argc, char *const *argv) {
     WBStreamTx::Options options_tx{};
     options_tx.radio_port=10;
     options_tx.enable_fec= enable_fec;
-
-    auto wb_stream_udp_tx=std::make_unique<WBStreamTxUDP>(txrx,options_tx,5600);
+    const auto FEC_K=8; // arbitrary chosen
+    auto wb_stream_udp_tx=std::make_unique<WBStreamTxUDP>(txrx,options_tx,FEC_K,5600);
+    //
+    // For proper application -create more TX / RX stream(s) here if you need
+    //
+    txrx->start_receiving();
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
@@ -101,7 +105,9 @@ int main(int argc, char *const *argv) {
     options_rx.radio_port=10;
     options_rx.enable_fec= enable_fec;
     auto wb_stream_udp_rx=std::make_unique<WBStreamRxUDP>(txrx,options_rx,5601);
-    // Don't forget to start the receive thread of the WB Tx Rx
+    //
+    // For proper application -create more TX / RX stream(s) here if you need
+    //
     txrx->start_receiving();
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
