@@ -82,9 +82,9 @@ void FECEncoder::encode_block(
   }
 }
 
-bool RxBlock::hasFragment(const FECPayloadHdr& header) {
-  assert(header.block_idx == blockIdx);
-  return fragment_map[header.fragment_idx] == AVAILABLE;
+bool RxBlock::hasFragment(const int fragment_idx) {
+  assert(fragment_idx<fragment_map.size());
+  return fragment_map[fragment_idx] == AVAILABLE;
 }
 
 bool RxBlock::allPrimaryFragmentsHaveBeenForwarded() const {
@@ -110,7 +110,7 @@ bool RxBlock::allPrimaryFragmentsAreAvailable() const {
 void RxBlock::addFragment(const uint8_t* data, const std::size_t dataLen) {
   auto* hdr_p=(FECPayloadHdr*) data;
   FECPayloadHdr& header=*hdr_p;
-  assert(!hasFragment(header));
+  assert(!hasFragment(header.fragment_idx));
   assert(header.block_idx == blockIdx);
   assert(fragment_map[header.fragment_idx] == UNAVAILABLE);
   assert(header.fragment_idx < blockBuffer.size());
@@ -344,7 +344,7 @@ void FECDecoder::process_with_rx_queue(const FECPayloadHdr& header,
   // cannot be nullptr
   RxBlock &block = *blockP;
   // ignore already processed fragments
-  if (block.hasFragment(header)) {
+  if (block.hasFragment(header.fragment_idx)) {
     return;
   }
   block.addFragment(data,data_size);

@@ -127,7 +127,7 @@ class RxBlock {
   ~RxBlock() = default;
  public:
   // returns true if this fragment has been already received
-  bool hasFragment(const FECPayloadHdr &header);
+  bool hasFragment(int fragment_idx);
   // returns true if we are "done with this block" aka all data has been already forwarded
   bool allPrimaryFragmentsHaveBeenForwarded() const;
   // returns true if enough FEC secondary fragments are available to replace all missing primary fragments
@@ -135,7 +135,7 @@ class RxBlock {
   // returns true as soon as all primary fragments are available
   bool allPrimaryFragmentsAreAvailable() const;
   // copy the fragment data and mark it as available
-  // you should check if it is already available with hasFragment() to avoid storing a fragment multiple times
+  // you should check if it is already available with hasFragment() to avoid copying the same fragment multiple times
   // when using multiple RX cards
   void addFragment(const uint8_t *data, const std::size_t dataLen);
   // util to copy the packet size and payload (and not more)
