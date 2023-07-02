@@ -8,6 +8,9 @@
 #include "../WBStreamRx.h"
 #include "SocketHelper.hpp"
 
+/**
+ * Uses UDP for data in instead of callback
+ */
 class WBStreamTxUDP{
  public:
   WBStreamTxUDP(std::shared_ptr<WBTxRx> txrx,WBStreamTx::Options options,int fec_k,int in_udp_port){
@@ -33,7 +36,7 @@ class WBStreamTxUDP{
     m_udp_in=std::make_unique<SocketHelper::UDPReceiver>(
         SocketHelper::ADDRESS_LOCALHOST,in_udp_port,cb_udp_in);
     m_udp_in->runInBackground();
-    auto console=wifibroadcast::log::create_or_get(fmt::format("UDP TX {}-{}",options.radio_port,in_udp_port));
+    auto console=wifibroadcast::log::create_or_get(fmt::format("udp{}->radio_port{}",in_udp_port,options.radio_port));
     console->info("Expecting data on localhost:{}",in_udp_port);
     if(options.enable_fec){
       console->warn("This buffers {} packets on udp in !",fec_k);

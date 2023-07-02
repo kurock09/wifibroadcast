@@ -78,33 +78,8 @@ int main(int argc, char *const *argv) {
     WBStreamTx::Options options_tx{};
     options_tx.radio_port=10;
     options_tx.enable_fec= enable_fec;
-    std::unique_ptr<WBStreamTx> wb_tx=std::make_unique<WBStreamTx>(txrx,options_tx);
-    // catches a common newbie mistake of forgetting that this buffers in packets
-    int last_udp_in_packet_ts_ms=MyTimeHelper:: get_curr_time_ms();
-    // we need to buffer packets due to udp
-    std::vector<std::shared_ptr<std::vector<uint8_t>>> block;
-    static constexpr auto M_FEC_K=8; // arbitrary chosen
-    auto cb_udp_in=[&wb_tx,&block,&last_udp_in_packet_ts_ms,&enable_fec](const uint8_t *payload, const std::size_t payloadSize){
-      last_udp_in_packet_ts_ms=MyTimeHelper::get_curr_time_ms();
-      if(enable_fec){
-        auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
-        block.push_back(packet);
-        if(block.size()==M_FEC_K){
-          wb_tx->try_enqueue_block(block,100,20);
-          block.resize(0);
-        }
-      }else{
-        auto packet=std::make_shared<std::vector<uint8_t>>(payload,payload+payloadSize);
-        wb_tx->try_enqueue_packet(packet);
-      }
-    };
-    std::unique_ptr<SocketHelper::UDPReceiver> m_udp_in=std::make_unique<SocketHelper::UDPReceiver>(
-        SocketHelper::ADDRESS_LOCALHOST,5600,cb_udp_in);
-    m_udp_in->runInBackground();
-    console->info("Expecting data on localhost:5600");
-    if(enable_fec){
-      console->warn("This buffers {} packets on udp in !",M_FEC_K);
-    }
+
+    auto wb_stream_udp_tx=std::make_unique<WBStreamTxUDP>(txrx,options_tx,5600);
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
@@ -114,7 +89,7 @@ int main(int argc, char *const *argv) {
         auto txStats=txrx->get_tx_stats();
         std::cout<<txStats<<std::endl;
       }
-      auto elapsed_since_last_udp_packet=MyTimeHelper::get_curr_time_ms()-last_udp_in_packet_ts_ms;
+      auto elapsed_since_last_udp_packet=MyTimeHelper::get_curr_time_ms()-wb_stream_udp_tx->last_udp_in_packet_ts_ms;
       const int UDP_LAST_PACKET_MIN_INTERVAL_S=2;
       if(elapsed_since_last_udp_packet>1000*UDP_LAST_PACKET_MIN_INTERVAL_S){
         console->warn("No udp packet in for >= {} seconds",UDP_LAST_PACKET_MIN_INTERVAL_S);
