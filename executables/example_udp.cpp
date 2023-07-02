@@ -121,21 +121,13 @@ int main(int argc, char *const *argv) {
       }
     }
   }else{
-    std::unique_ptr<SocketHelper::UDPForwarder> m_udp_out=std::make_unique<SocketHelper::UDPForwarder>(
-        SocketHelper::ADDRESS_LOCALHOST,5601);
     // listen for packets and udp out
     WBStreamRx::Options options_rx{};
     options_rx.radio_port=10;
     options_rx.enable_fec= enable_fec;
-    std::unique_ptr<WBStreamRx> wb_rx=std::make_unique<WBStreamRx>(txrx,options_rx);
-    auto console=wifibroadcast::log::create_or_get("out_cb");
-    auto cb=[&console,&m_udp_out](const uint8_t *payload, const std::size_t payloadSize){
-      //console->debug("Got data {}",payloadSize);
-      m_udp_out->forwardPacketViaUDP(payload,payloadSize);
-    };
-    wb_rx->set_callback(cb);
+    auto wb_stream_udp_rx=std::make_unique<WBStreamRxUDP>(txrx,options_rx,5601);
+    // Don't forget to start the receive thread of the WB Tx Rx
     txrx->start_receiving();
-    console->info("Sending data to localhost:5601");
     auto lastLog=std::chrono::steady_clock::now();
     while (true){
       std::this_thread::sleep_for(std::chrono::milliseconds (500));
