@@ -9,6 +9,8 @@
 #include "../src/HelperSources/SocketHelper.hpp"
 #include "RandomBufferPot.hpp"
 #include "../src/HelperSources/TimeHelper.hpp"
+#include "../src/legacy/WBStreamRxUDP.h"
+#include "../src/legacy/WBStreamTxUDP.h"
 
 /**
  * Simple example application that uses UDP as data input / output
