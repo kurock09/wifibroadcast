@@ -31,13 +31,14 @@ static_assert(__BYTE_ORDER == __LITTLE_ENDIAN, "This code is written for little 
 struct FECPayloadHdr{
   // Most often each frame is encoded as one fec block
   // rolling
-  uint16_t block_idx;
+  uint32_t block_idx;
   // each fragment inside a block has a fragment index
-  uint16_t fragment_idx;
+  // uint8_t is enough, since we are limited to 128+128=256 fragments anyway by the FEC impl.
+  uint8_t fragment_idx;
   // how many fragments make up the primary fragments part, the rest is secondary fragments
   // note that we do not need to know how many secondary fragments have been created - as soon as we
   // 'have enough', we can perform the FEC correction step if necessary
-  uint16_t n_primary_fragments;
+  uint8_t n_primary_fragments;
   // For FEC all data fragments have to be the same size. We pad the rest during encoding / decoding with 0,
   // and do this when encoding / decoding such that the 0 bytes don't have to be transmitted.
   // This needs to be included during the fec encode / decode step !
