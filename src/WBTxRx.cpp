@@ -463,7 +463,6 @@ void WBTxRx::rx_reset_stats() {
   m_rx_stats=RxStats{};
 }
 
-bool WBTxRx::is_card_active_tx(int card_idx) {
-  if(card_idx==m_curr_tx_card)return true;
-  return false;
+int WBTxRx::get_curr_active_tx_card_idx() {
+  return m_curr_tx_card;
 }

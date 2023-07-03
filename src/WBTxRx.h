@@ -156,7 +156,7 @@ class WBTxRx {
    // used by openhd during frequency scan
    void rx_reset_stats();
    // OpenHD displays whatever card is currently transmitting in the OSD
-   bool is_card_active_tx(int card_idx);
+   int get_curr_active_tx_card_idx();
   public:
    // Session key used for encrypting outgoing packets
    struct SessionKeyPacket{
