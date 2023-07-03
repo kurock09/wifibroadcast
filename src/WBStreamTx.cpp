@@ -49,6 +49,8 @@ WBStreamTx::~WBStreamTx() {
 
 bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
   assert(!options.enable_fec);
+  m_n_input_packets++;
+  m_count_bytes_data_provided+=packet->size();
   auto item=std::make_shared<EnqueuedPacket>();
   item->data=std::move(packet);
   const bool res= m_packet_queue->try_enqueue(item);
@@ -63,11 +65,13 @@ bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet
 
 bool WBStreamTx::try_enqueue_block(std::vector<std::shared_ptr<std::vector<uint8_t>>> fragments,int max_block_size, int fec_overhead_perc) {
   assert(options.enable_fec);
+  m_n_input_packets+=fragments.size();
   for(const auto& fragment:fragments){
     if (fragment->empty() || fragment->size() > FEC_PACKET_MAX_PAYLOAD_SIZE) {
       m_console->warn("Fed fragment with incompatible size:{}",fragment->size());
       return false;
     }
+    m_count_bytes_data_provided+=fragment->size();
   }
   auto item=std::make_shared<EnqueuedBlock>();
   item->fragments=fragments;
@@ -146,8 +150,6 @@ void WBStreamTx::loop_process_data() {
 
 void WBStreamTx::process_enqueued_packet(const WBStreamTx::EnqueuedPacket& packet) {
   m_fec_disabled_encoder->encodePacket(packet.data->data(),packet.data->size());
-  m_n_input_packets++;
-  m_count_bytes_data_provided+=packet.data->size();
 }
 
 void WBStreamTx::process_enqueued_block(const WBStreamTx::EnqueuedBlock& block) {
@@ -155,10 +157,6 @@ void WBStreamTx::process_enqueued_block(const WBStreamTx::EnqueuedBlock& block) 
   for(auto& x_block :blocks){
     const auto n_secondary_f=calculate_n_secondary_fragments(x_block.size(),block.fec_overhead_perc);
     m_fec_encoder->encode_block(x_block,n_secondary_f);
-  }
-  m_n_input_packets+=block.fragments.size();
-  for(const auto& fragment:block.fragments){
-    m_count_bytes_data_provided +=fragment->size();
   }
 }
 
