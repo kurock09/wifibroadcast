@@ -152,6 +152,8 @@ class WBTxRx {
    RxStatsPerCard get_rx_stats_for_card(int card_index);
    // used by openhd during frequency scan
    void rx_reset_stats();
+   // OpenHD displays whatever card is currently transmitting in the OSD
+   bool is_card_active_tx(int card_idx);
   public:
    // Session key used for encrypting outgoing packets
    struct SessionKeyPacket{
@@ -178,7 +180,7 @@ class WBTxRx {
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
   // For multiple RX cards the card with the highest rx rssi is used to inject packets on
-  std::atomic<int> m_highest_rssi_index=0;
+  std::atomic<int> m_curr_tx_card=0;
   SessionKeyPacket m_tx_sess_key_packet;
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;

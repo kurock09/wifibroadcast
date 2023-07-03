@@ -90,7 +90,7 @@ void WBTxRx::tx_inject_packet(const uint8_t radioPort,
   assert(data_len+crypto_aead_chacha20poly1305_ABYTES == ciphertext_len);
   // inject via pcap
   // we inject the packet on whatever card has the highest rx rssi right now
-  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
+  pcap_t *tx= m_pcap_handles[m_curr_tx_card].rx;
   const auto before_injection = std::chrono::steady_clock::now();
   //const auto len_injected=pcap_inject(tx, packet.data(), packet.size());
   const auto len_injected=write(m_receive_pollfds.at(0).fd,packet.data(),packet.size());
@@ -436,4 +436,9 @@ WBTxRx::RxStatsPerCard WBTxRx::get_rx_stats_for_card(int card_index) {
 
 void WBTxRx::rx_reset_stats() {
   m_rx_stats=RxStats{};
+}
+
+bool WBTxRx::is_card_active_tx(int card_idx) {
+  if(card_idx==m_curr_tx_card)return true;
+  return false;
 }
