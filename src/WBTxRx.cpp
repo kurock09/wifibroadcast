@@ -306,6 +306,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
             m_rx_stats_per_card.at(i).rssi_for_wifi_card.reset();
             if(dbm_average>highest_dbm){
               idx_card_highest_rssi=i;
+              highest_dbm=dbm_average;
             }
             m_console->debug("Card {} dbm_average:{}",i,dbm_average);
           }
