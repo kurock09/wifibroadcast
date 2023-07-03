@@ -58,6 +58,9 @@ class WBTxRx {
     bool advanced_latency_debugging_rx= false;
     // set sched_param = max realtime on the thread that pulls out the packets
     bool receive_thread_max_realtime= true;
+    // enable / disable switching on which card to send packets in case there are multiple cards given
+    // if this option is disabled, card 0 is always used for sending
+    bool enable_auto_switch_tx_card= true;
   };
   explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
   WBTxRx(const WBTxRx &) = delete;

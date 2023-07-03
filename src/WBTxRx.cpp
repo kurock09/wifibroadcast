@@ -294,7 +294,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
         m_rx_stats.last_received_packet_channel_width=parsedPacket->channel_width.value();
       }
       // Adjustment of which card is used for injecting packets in case there are multiple RX card(s)
-      if(m_wifi_cards.size()>1){
+      if(m_wifi_cards.size()>1 && m_options.enable_auto_switch_tx_card){
         const auto elapsed=std::chrono::steady_clock::now()-m_last_highest_rssi_adjustment_tp;
         if(elapsed>=HIGHEST_RSSI_ADJUSTMENT_INTERVAL){
           m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
