@@ -297,6 +297,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       if(m_wifi_cards.size()>1){
         const auto elapsed=std::chrono::steady_clock::now()-m_last_highest_rssi_adjustment_tp;
         if(elapsed>=HIGHEST_RSSI_ADJUSTMENT_INTERVAL){
+          m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
           int idx_card_highest_rssi=0;
           int highest_dbm=-1000;
           for(int i=0;i<m_rx_packet_stats.size();i++){
@@ -305,6 +306,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
             if(dbm_average>highest_dbm){
               idx_card_highest_rssi=i;
             }
+            m_console->debug("Card {} dbm_average:{}",i,dbm_average);
           }
           if(m_curr_tx_card!=idx_card_highest_rssi){
             // TODO
