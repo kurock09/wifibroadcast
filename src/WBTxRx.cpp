@@ -372,7 +372,9 @@ void WBTxRx::send_session_key() {
   tmp_ieee_hdr.writeParams(RADIO_PORT_SESSION_KEY_PACKETS,0);
   auto packet=wifibroadcast::pcap_helper::create_radiotap_wifi_packet(tmp_radiotap_header,tmp_ieee_hdr,
                                                           (uint8_t *)&m_tx_sess_key_packet, sizeof(SessionKeyPacket));
-  pcap_t *tx= m_pcap_handles[m_highest_rssi_index].rx;
+  // NOTE: Session key is always sent via card 0 since otherwise we might pick up the session key intended for the ground unit
+  // from the air unit !
+  pcap_t *tx= m_pcap_handles[0].rx;
   const auto len_injected=pcap_inject(tx,packet.data(),packet.size());
   if (len_injected != (int) packet.size()) {
     // This basically should never fail - if the tx queue is full, pcap seems to wait ?!
