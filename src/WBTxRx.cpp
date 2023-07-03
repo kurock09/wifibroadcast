@@ -298,11 +298,11 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
         const auto elapsed=std::chrono::steady_clock::now()-m_last_highest_rssi_adjustment_tp;
         if(elapsed>=HIGHEST_RSSI_ADJUSTMENT_INTERVAL){
           int idx_card_highest_rssi=0;
-          int lowest_dbm=1000;
+          int highest_dbm=-1000;
           for(int i=0;i<m_rx_packet_stats.size();i++){
             const int dbm_average=m_rx_packet_stats.at(i).rssi_for_wifi_card.getAverage();
             m_rx_packet_stats.at(i).rssi_for_wifi_card.reset();
-            if(dbm_average<lowest_dbm){
+            if(dbm_average>highest_dbm){
               idx_card_highest_rssi=i;
             }
           }
