@@ -211,7 +211,7 @@ class WBTxRx {
   // I get about 5 tx error(s) per second with my atheros, but it works fine. This workaround also seems to not work at all
   // with the RTL8812au.
   static constexpr std::chrono::nanoseconds MAX_SANE_INJECTION_TIME=std::chrono::milliseconds(5);
-  std::vector<RxStatsPerCard> m_rx_packet_stats;
+  std::vector<RxStatsPerCard> m_rx_stats_per_card;
   std::map<int,std::shared_ptr<StreamRxHandler>> m_rx_handlers;
   // If each iteration pulls too many packets out your CPU is most likely too slow
   AvgCalculatorSize m_n_packets_polled_pcap;

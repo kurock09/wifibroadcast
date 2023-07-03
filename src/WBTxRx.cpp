@@ -18,7 +18,7 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
   m_console=wifibroadcast::log::create_or_get("WBTxRx");
   m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(m_wifi_cards),m_options.set_direction);
   m_receive_pollfds.resize(m_wifi_cards.size());
-  m_rx_packet_stats.resize(m_wifi_cards.size());
+  m_rx_stats_per_card.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
     auto tmp=std::make_shared<seq_nr::Helper>();
     m_seq_nr_per_card.push_back(tmp);
@@ -213,7 +213,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
   const size_t pkt_payload_size = parsedPacket->payloadSize;
   m_rx_stats.count_p_any++;
   m_rx_stats.count_bytes_any+=pkt_payload_size;
-  m_rx_packet_stats[wlan_idx].count_p_any++;
+  m_rx_stats_per_card[wlan_idx].count_p_any++;
 
   if (parsedPacket->frameFailedFCSCheck) {
     if(m_options.advanced_debugging_rx){
@@ -278,7 +278,7 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       m_rx_stats.count_p_valid++;
       m_rx_stats.count_bytes_valid+=pkt_payload_size;
       // We only use known "good" packets for those stats.
-      auto &this_wifi_card_stats = m_rx_packet_stats.at(wlan_idx);
+      auto &this_wifi_card_stats = m_rx_stats_per_card.at(wlan_idx);
       auto& rssi_for_this_card=this_wifi_card_stats.rssi_for_wifi_card;
       //m_console->debug("{}",all_rssi_to_string(parsedPacket->allAntennaValues));
       const auto best_rssi=wifibroadcast::pcap_helper::get_best_rssi_of_card(parsedPacket->allAntennaValues);
@@ -300,9 +300,10 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
           m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
           int idx_card_highest_rssi=0;
           int highest_dbm=-1000;
-          for(int i=0;i<m_rx_packet_stats.size();i++){
-            const int dbm_average=m_rx_packet_stats.at(i).rssi_for_wifi_card.getAverage();
-            m_rx_packet_stats.at(i).rssi_for_wifi_card.reset();
+          for(int i=0;i< m_rx_stats_per_card.size();i++){
+            const int dbm_average=
+                m_rx_stats_per_card.at(i).rssi_for_wifi_card.getAverage();
+            m_rx_stats_per_card.at(i).rssi_for_wifi_card.reset();
             if(dbm_average>highest_dbm){
               idx_card_highest_rssi=i;
             }
@@ -344,7 +345,7 @@ bool WBTxRx::process_received_data_packet(int wlan_idx,uint8_t radio_port,const 
     // Calculate sequence number stats per card
     auto& seq_nr_for_card=m_seq_nr_per_card.at(wlan_idx);
     seq_nr_for_card->on_new_sequence_number((uint16_t)nonce);
-    m_rx_packet_stats.at(wlan_idx).curr_packet_loss=seq_nr_for_card->get_current_loss_percent();
+    m_rx_stats_per_card.at(wlan_idx).curr_packet_loss=seq_nr_for_card->get_current_loss_percent();
     return true;
   }
   //m_console->debug("Got non-wb packet {}",radio_port);
@@ -454,7 +455,7 @@ WBTxRx::RxStats WBTxRx::get_rx_stats() {
 }
 
 WBTxRx::RxStatsPerCard WBTxRx::get_rx_stats_for_card(int card_index) {
-  return m_rx_packet_stats.at(card_index);
+  return m_rx_stats_per_card.at(card_index);
 }
 
 void WBTxRx::rx_reset_stats() {
