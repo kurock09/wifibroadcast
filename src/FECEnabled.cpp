@@ -234,7 +234,7 @@ bool FECDecoder::validate_packet_size(const int data_len) {
   return true;
 }
 
-bool FECDecoder::validate_and_process_packet(const uint8_t* data,
+bool FECDecoder::process_packet(const uint8_t* data,
                                              int data_len) {
   assert(validate_packet_size(data_len));
   // reconstruct the data layout

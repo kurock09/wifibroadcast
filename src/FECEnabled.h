@@ -221,7 +221,8 @@ class FECDecoder {
   AvgCalculator m_fec_decode_time{};
  public:
   static bool validate_packet_size(int data_len);
-  bool validate_and_process_packet(const uint8_t* data,int data_len);
+  // process a valid packet
+  bool process_valid_packet(const uint8_t* data,int data_len);
  private:
   // since we also need to search this data structure, a std::queue is not enough.
   // since we have an upper limit on the size of this dequeue, it is basically a searchable ring buffer

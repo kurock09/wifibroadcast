@@ -68,7 +68,7 @@ static void test_fec_stream_random_bs_fs_overhead_dropped(){
     if(GenericHelper::vec_contains(curr_indices_of_packets_to_drop,hdr->fragment_idx)){
       wifibroadcast::log::get_default()->debug("Dropping packet {} in {}",(int)hdr->fragment_idx,(int)hdr->n_primary_fragments);
     }else{
-      decoder.validate_and_process_packet(payload,payloadSize);
+      decoder.process_valid_packet(payload,payloadSize);
     }
     /*if(hdr->fragment_idx<hdr->n_primary_fragments){
       auto lol=std::vector<uint8_t>(payload+sizeof(FECPayloadHdr),payload+payloadSize);
