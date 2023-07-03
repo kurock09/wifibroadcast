@@ -177,7 +177,8 @@ class WBTxRx {
   Ieee80211Header mIeee80211Header{};
   uint16_t m_ieee80211_seq = 0;
   uint64_t m_nonce=0;
-  int m_highest_rssi_index=0;
+  // For multiple RX cards the card with the highest rx rssi is used to inject packets on
+  std::atomic<int> m_highest_rssi_index=0;
   SessionKeyPacket m_tx_sess_key_packet;
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
