@@ -307,6 +307,8 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
             }
           }
           if(m_curr_tx_card!=idx_card_highest_rssi){
+            // TODO
+            // to avoid switching too often, only switch if the difference in dBm exceeds a threshold value
             m_console->debug("Switching to card {}",idx_card_highest_rssi);
             m_curr_tx_card=idx_card_highest_rssi;
           }
