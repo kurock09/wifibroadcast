@@ -216,6 +216,9 @@ class WBTxRx {
   // If each iteration pulls too many packets out your CPU is most likely too slow
   AvgCalculatorSize m_n_packets_polled_pcap;
   AvgCalculator m_packet_host_latency;
+  // We adjust the TX card in 1 second intervals
+  std::chrono::steady_clock::time_point m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
+  static constexpr auto HIGHEST_RSSI_ADJUSTMENT_INTERVAL=std::chrono::seconds(1);
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();

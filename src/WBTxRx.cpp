@@ -293,6 +293,25 @@ void WBTxRx::on_new_packet(const uint8_t wlan_idx, const pcap_pkthdr &hdr,
       if(parsedPacket->channel_width.has_value()){
         m_rx_stats.last_received_packet_channel_width=parsedPacket->channel_width.value();
       }
+      // Adjustment of which card is used for injecting packets in case there are multiple RX card(s)
+      if(m_wifi_cards.size()>1){
+        const auto elapsed=std::chrono::steady_clock::now()-m_last_highest_rssi_adjustment_tp;
+        if(elapsed>=HIGHEST_RSSI_ADJUSTMENT_INTERVAL){
+          int idx_card_highest_rssi=0;
+          int lowest_dbm=1000;
+          for(int i=0;i<m_rx_packet_stats.size();i++){
+            const int dbm_average=m_rx_packet_stats.at(i).rssi_for_wifi_card.getAverage();
+            m_rx_packet_stats.at(i).rssi_for_wifi_card.reset();
+            if(dbm_average<lowest_dbm){
+              idx_card_highest_rssi=i;
+            }
+          }
+          if(m_curr_tx_card!=idx_card_highest_rssi){
+            m_console->debug("Switching to card {}",idx_card_highest_rssi);
+            m_curr_tx_card=idx_card_highest_rssi;
+          }
+        }
+      }
     }
   }
 }
