@@ -220,6 +220,7 @@ class FECDecoder {
   const bool m_enable_log_debug;
   AvgCalculator m_fec_decode_time{};
  public:
+  static bool validate_packet_size(int data_len);
   bool validate_and_process_packet(const uint8_t* data,int data_len);
  private:
   // since we also need to search this data structure, a std::queue is not enough.

@@ -72,6 +72,10 @@ void WBStreamRx::on_new_packet(uint64_t nonce, int wlan_index, const uint8_t *da
     }
   }else{
     if(m_options.enable_fec){
+      if(!FECDecoder::validate_packet_size(data_len)){
+        m_console->debug("invalid fec packet size {}",data_len);
+        return ;
+      }
       m_fec_decoder->validate_and_process_packet(data,data_len);
     }else{
       m_fec_disabled_decoder->process_packet(data,data_len);

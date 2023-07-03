@@ -222,11 +222,21 @@ std::string RxBlock::get_missing_primary_packets_readable() const {
   return std::to_string(tmp.value());
 }
 
+bool FECDecoder::validate_packet_size(const int data_len) {
+  if(data_len<sizeof(FECPayloadHdr)){
+    // packet is too small
+    return false;
+  }
+  if(data_len>MAX_PAYLOAD_BEFORE_FEC){
+    // packet is too big
+    return false;
+  }
+  return true;
+}
+
 bool FECDecoder::validate_and_process_packet(const uint8_t* data,
                                              int data_len) {
-  if(data_len<sizeof(FECPayloadHdr)){
-    wifibroadcast::log::get_default()->warn("too small packet size:{}",data_len);
-  }
+  assert(validate_packet_size(data_len));
   // reconstruct the data layout
   const FECPayloadHdr* header_p=(FECPayloadHdr*)data;
   /* const uint8_t* payload_p=data+sizeof(FECPayloadHdr);
