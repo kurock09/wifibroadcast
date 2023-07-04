@@ -214,7 +214,7 @@ int RxBlock::reconstructAllMissingData() {
 
 std::optional<int> RxBlock::get_missing_primary_packets() const {
   if(m_n_primary_fragments_in_block<=0)return std::nullopt;
-  return m_n_primary_fragments_in_block-m_n_available_primary_fragments;
+  return m_n_primary_fragments_in_block-getNAvailableFragments();
 }
 
 std::string RxBlock::get_missing_primary_packets_readable() const {
