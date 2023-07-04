@@ -17,7 +17,7 @@ WBStreamRx::WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1)
     m_console=wifibroadcast::log::create_or_get("wb_rx"+std::to_string(m_options.radio_port));
   }
   if(m_options.enable_fec){
-    m_fec_decoder = std::make_unique<FECDecoder>(m_options.rx_queue_depth,MAX_TOTAL_FRAGMENTS_PER_BLOCK,m_options.enable_fec_debug_log);
+    m_fec_decoder = std::make_unique<FECDecoder>(m_options.fec_rx_queue_depth,MAX_TOTAL_FRAGMENTS_PER_BLOCK,m_options.enable_fec_debug_log);
     auto cb=[this](const uint8_t *data, int data_len){
       on_decoded_packet(data,data_len);
     };

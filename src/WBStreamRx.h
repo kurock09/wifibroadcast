@@ -32,7 +32,7 @@ class WBStreamRx {
     bool enable_fec= true;
     // RX queue depth (max n of blocks that can be buffered in the rx pipeline)
     // Use 1 if you have a single RX card, since anything else can result in stuttering (but might/is required for multiple rx card(s))
-    unsigned int rx_queue_depth=1;
+    unsigned int fec_rx_queue_depth=1;
     // overwrite the console used for logging
     std::shared_ptr<spdlog::logger> opt_console=nullptr;
     // enable / disable multi threading (decouples the processing of data from the thread that provided the data,
