@@ -403,6 +403,9 @@ void FECDecoder::process_with_rx_queue(const FECPayloadHdr& header,
     // If this block can be fully recovered or all primary fragments are available this triggers a flush
     if (block.allPrimaryFragmentsAreAvailable() || block.allPrimaryFragmentsCanBeRecovered()) {
       // send all queued packets in all unfinished blocks before and remove them
+      if(m_enable_log_debug){
+        wifibroadcast::log::get_default()->debug("Block {} triggered a flush",block.getBlockIdx());
+      }
       while (block != *rx_queue.front()) {
         forwardMissingPrimaryFragmentsIfAvailable(*rx_queue.front(), true);
         rxQueuePopFront();
