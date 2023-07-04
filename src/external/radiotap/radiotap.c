@@ -14,6 +14,8 @@
 #include "radiotap_iter.h"
 #include "platform.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Waddress-of-packed-member"
 /* function prototypes and related defs are in radiotap_iter.h */
 
 static const struct radiotap_align_size rtap_namespace_sizes[] = {
@@ -383,3 +385,5 @@ int ieee80211_radiotap_iterator_next(
       return 0;
   }
 }
+
+#pragma clang diagnostic pop
