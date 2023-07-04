@@ -171,6 +171,7 @@ class RxBlock {
   // This only works if we know the "fec_k" parameter
   std::optional<int> get_missing_primary_packets() const;
   std::string get_missing_primary_packets_readable() const;
+  int get_n_primary_fragments()const;
  private:
   // the block idx marks which block this element refers to
   const uint64_t blockIdx = 0;

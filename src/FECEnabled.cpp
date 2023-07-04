@@ -222,6 +222,9 @@ std::string RxBlock::get_missing_primary_packets_readable() const {
   if(tmp==std::nullopt)return "?";
   return std::to_string(tmp.value());
 }
+int RxBlock::get_n_primary_fragments() const {
+  return m_n_primary_fragments_in_block;
+}
 
 bool FECDecoder::validate_packet_size(const int data_len) {
   if(data_len<sizeof(FECPayloadHdr)){
@@ -256,7 +259,7 @@ void FECDecoder::forwardMissingPrimaryFragmentsIfAvailable(
   // TODO remove me
   if(discardMissingPackets){
     if(m_enable_log_debug){
-      wifibroadcast::log::get_default()->warn("Forwarding block that is not yet fully finished: {} with n fragments: {} missing: {}",
+      wifibroadcast::log::get_default()->warn("Forwarding block that is not yet fully finished: {} total: {} available: {} missing: {}",
                                               block.getBlockIdx(),block.getNAvailableFragments(),block.get_missing_primary_packets_readable());
     }
   }
