@@ -197,9 +197,13 @@ class RxBlock {
 // Most importantly, it also handles re-ordering of packets and packet duplicates due to multiple rx cards
 class FECDecoder {
  public:
-  // Does not need to know k,n or if tx does variable block length or not.
-  // If the tx doesn't use the full range of fragment indices (aka K is fixed) use
-  // @param maxNFragmentsPerBlock for a more efficient memory usage
+  /**
+   * @param rx_queue_max_depth max size of rx queue - since in case of openhd, one frame is either one or two FEC blocks
+   *        we don't need that big of an rx queue
+   * @param maxNFragmentsPerBlock memory per block is pre-allocated, reduce this value if you know the encoder doesn't ever exceed a given
+   *        n of fragments per block
+   * @param enable_log_debug
+   */
   explicit FECDecoder(const unsigned int rx_queue_max_depth,const unsigned int maxNFragmentsPerBlock = MAX_TOTAL_FRAGMENTS_PER_BLOCK,
                       bool enable_log_debug=false) :
                                                        RX_QUEUE_MAX_SIZE(rx_queue_max_depth),
