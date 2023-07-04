@@ -3,6 +3,7 @@
 //
 
 #include "FECEnabled.h"
+#include "wifibroadcast-spdlog.h"
 
 void FECEncoder::encode_block(
     std::vector<std::shared_ptr<std::vector<uint8_t>>> data_packets,

@@ -7,20 +7,20 @@
 
 #include <array>
 #include <cerrno>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <functional>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
-#include <optional>
 
 #include "FEC.hpp"
 #include "HelperSources/TimeHelper.hpp"
-#include "wifibroadcast-spdlog.h"
 
 /**
  * Encoder and Decoder pair for FEC protected block / packet based data streaming.

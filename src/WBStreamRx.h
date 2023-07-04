@@ -40,6 +40,8 @@ class WBStreamRx {
     bool enable_threading= false;
     // only if threading is enabled
     int packet_queue_size=20;
+    // enable fec debug log, obviously only if fec is enbaled
+    bool enable_fec_debug_log=false;
   };
   WBStreamRx(std::shared_ptr<WBTxRx> txrx,Options options1);
   ~WBStreamRx();
