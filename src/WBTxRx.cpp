@@ -151,7 +151,7 @@ void WBTxRx::loop_receive_packets() {
           // limit logging here
           const auto elapsed=std::chrono::steady_clock::now()-m_last_receiver_error_log;
           if(elapsed>std::chrono::seconds(1)){
-            m_console->warn("RawReceiver errors {} on pcap fds {} (wlan {})",m_n_receiver_errors,i,m_wifi_cards[i]);
+            m_console->warn("{} receiver errors on pcap fd {} (wlan {})",m_n_receiver_errors,i,m_wifi_cards[i]);
             m_last_receiver_error_log=std::chrono::steady_clock::now();
           }
         }else{
