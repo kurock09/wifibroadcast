@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <memory>
+#include "../wifibroadcast-spdlog.h"
 
 namespace seq_nr{
 
