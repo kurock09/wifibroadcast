@@ -260,7 +260,7 @@ void FECDecoder::forwardMissingPrimaryFragmentsIfAvailable(
   if(discardMissingPackets){
     if(m_enable_log_debug){
       wifibroadcast::log::get_default()->warn("Forwarding block that is not yet fully finished: {} total: {} available: {} missing: {}",
-                                              block.getBlockIdx(),block.getNAvailableFragments(),block.get_missing_primary_packets_readable());
+                                              block.getBlockIdx(),block.get_n_primary_fragments(),block.getNAvailableFragments(),block.get_missing_primary_packets_readable());
     }
   }
   const auto indices = block.pullAvailablePrimaryFragments(discardMissingPackets);
