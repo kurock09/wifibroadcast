@@ -277,6 +277,10 @@ void FECDecoder::rxQueuePopFront() {
   assert(rx_queue.front() != nullptr);
   if (!rx_queue.front()->allPrimaryFragmentsHaveBeenForwarded()) {
     stats.count_blocks_lost++;
+    if(m_enable_log_debug){
+      auto& block=*rx_queue.front();
+      wifibroadcast::log::get_default()->debug("Removing block {} {}",block.getBlockIdx(),block.get_missing_primary_packets_readable());
+    }
   }
   rx_queue.pop_front();
 }
@@ -333,6 +337,9 @@ RxBlock* FECDecoder::rxRingFindCreateBlockByIdx(const uint64_t blockIdx) {
   // (can happen easily if the rx queue has a size of 1)
   const auto n_needed_new_blocks = last_known_block != (uint64_t) -1 ? blockIdx - last_known_block : 1;
   if(n_needed_new_blocks>RX_QUEUE_MAX_SIZE){
+    if(m_enable_log_debug){
+      wifibroadcast::log::get_default()->debug("Need {} blocks, exceeds {}",n_needed_new_blocks,RX_QUEUE_MAX_SIZE);
+    }
     stats.count_blocks_lost+=n_needed_new_blocks-RX_QUEUE_MAX_SIZE;
   }
   // add as many blocks as we need ( the rx ring mustn't have any gaps between the block indices).
