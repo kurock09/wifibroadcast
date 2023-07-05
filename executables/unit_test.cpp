@@ -66,7 +66,7 @@ static void test_fec_stream_random_bs_fs_overhead_dropped(){
   const auto cb1 = [&decoder,&curr_indices_of_packets_to_drop,&fragmented_frames_sequential_in](const uint8_t *payload, const std::size_t payloadSize)mutable {
     auto* hdr=(FECPayloadHdr*)payload;
     if(GenericHelper::vec_contains(curr_indices_of_packets_to_drop,hdr->fragment_idx)){
-      wifibroadcast::log::get_default()->debug("Dropping packet {} in {}",(int)hdr->fragment_idx,(int)hdr->n_primary_fragments);
+      //wifibroadcast::log::get_default()->debug("Dropping packet {} in {}",(int)hdr->fragment_idx,(int)hdr->n_primary_fragments);
     }else{
       decoder.process_valid_packet(payload,payloadSize);
     }
@@ -90,7 +90,7 @@ static void test_fec_stream_random_bs_fs_overhead_dropped(){
     auto fragmented_frame=fragmented_frames_in[i];
     const auto n_secondary_fragments=GenericHelper::create_random_number_between(0,MAX_N_S_FRAGMENTS_PER_BLOCK);
     //const auto n_secondary_fragments=0;
-    // We'l drop a specific amount of fragments
+    // We'l drop a random amount of fragments - but only up to as many fragments such that we can still recover the block
     const auto n_fragments_to_drop=GenericHelper::create_random_number_between(0,n_secondary_fragments);
     //const auto n_fragments_to_drop=1;
     auto indices=GenericHelper::createIndices(fragmented_frame.size()+n_secondary_fragments);
