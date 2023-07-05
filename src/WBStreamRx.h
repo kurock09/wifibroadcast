@@ -85,7 +85,7 @@ class WBStreamRx {
   PacketsPerSecondCalculator m_input_packets_per_second_calculator{};
   // for calculating the current rx bitrate
   BitrateCalculator m_received_bitrate_calculator{};
-  // On the rx, either one of those two is active at the same time. NOTE: nullptr until the first session key packet
+  // On the rx, either one of those two is active at the same time.
   std::unique_ptr<FECDecoder> m_fec_decoder = nullptr;
   std::unique_ptr<FECDisabledDecoder> m_fec_disabled_decoder = nullptr;
   seq_nr::Helper m_seq_nr_helper;
