@@ -41,7 +41,7 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
   m_encryptor->makeNewSessionKey(m_tx_sess_key_packet.sessionKeyNonce,
                                 m_tx_sess_key_packet.sessionKeyData);
   // next session key in delta ms if packets are being fed
-  m_session_key_announce_ts = std::chrono::steady_clock::now()+SESSION_KEY_ANNOUNCE_DELTA;
+  m_session_key_next_announce_ts = std::chrono::steady_clock::now();
 }
 
 WBTxRx::~WBTxRx() {
@@ -384,10 +384,10 @@ void WBTxRx::stop_receiving() {
 
 void WBTxRx::announce_session_key_if_needed() {
   const auto cur_ts = std::chrono::steady_clock::now();
-  if (cur_ts >= m_session_key_announce_ts) {
+  if (cur_ts >= m_session_key_next_announce_ts) {
     // Announce session key
     send_session_key();
-    m_session_key_announce_ts = cur_ts + SESSION_KEY_ANNOUNCE_DELTA;
+    m_session_key_next_announce_ts = cur_ts + m_options.session_key_packet_interval;
   }
 }
 

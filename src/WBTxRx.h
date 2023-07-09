@@ -61,6 +61,9 @@ class WBTxRx {
     // enable / disable switching on which card to send packets in case there are multiple cards given
     // if this option is disabled, card 0 is always used for sending
     bool enable_auto_switch_tx_card= true;
+    // interval in which the session key packet is sent out - if no data is fed to the TX,
+    // no session key is sent until data is fed.
+    std::chrono::milliseconds session_key_packet_interval=std::chrono::seconds(1);
   };
   explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
   WBTxRx(const WBTxRx &) = delete;
@@ -176,7 +179,7 @@ class WBTxRx {
   const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;
   std::vector<std::string> m_wifi_cards;
-  std::chrono::steady_clock::time_point m_session_key_announce_ts{};
+  std::chrono::steady_clock::time_point m_session_key_next_announce_ts{};
   RadiotapHeader::UserSelectableParams m_radioTapHeaderParams{};
   RadiotapHeader m_radiotap_header;
   Ieee80211Header mIeee80211Header{};
@@ -187,7 +190,6 @@ class WBTxRx {
   SessionKeyPacket m_tx_sess_key_packet;
   std::unique_ptr<Encryptor> m_encryptor;
   std::unique_ptr<Decryptor> m_decryptor;
-  static constexpr auto SESSION_KEY_ANNOUNCE_DELTA=std::chrono::seconds(1);
   struct PcapTxRx{
     pcap_t *tx= nullptr;
     pcap_t *rx= nullptr;
