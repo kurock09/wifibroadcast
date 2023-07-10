@@ -59,6 +59,10 @@ void WBTxRx::tx_inject_packet(const uint8_t radioPort,
                                     const uint8_t* data, int data_len) {
   assert(data_len<=MAX_PACKET_PAYLOAD_SIZE);
   std::lock_guard<std::mutex> guard(m_tx_mutex);
+  // for openhd ground station functionality
+  if(m_disable_all_transmissions){
+    return ;
+  }
   // new wifi packet
   auto packet_size=
       // Radiotap header comes first
@@ -466,4 +470,8 @@ void WBTxRx::rx_reset_stats() {
 
 int WBTxRx::get_curr_active_tx_card_idx() {
   return m_curr_tx_card;
+}
+
+void WBTxRx::set_passive_mode(bool passive) {
+  m_disable_all_transmissions=passive;
 }

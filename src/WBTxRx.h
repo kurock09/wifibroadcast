@@ -162,6 +162,8 @@ class WBTxRx {
    void rx_reset_stats();
    // OpenHD displays whatever card is currently transmitting in the OSD
    int get_curr_active_tx_card_idx();
+   // Used by OpenHD to do "passive mode" on a GCS
+   void set_passive_mode(bool passive);
   public:
    // Session key used for encrypting outgoing packets
    struct SessionKeyPacket{
@@ -226,6 +228,7 @@ class WBTxRx {
   // We adjust the TX card in 1 second intervals
   std::chrono::steady_clock::time_point m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
   static constexpr auto HIGHEST_RSSI_ADJUSTMENT_INTERVAL=std::chrono::seconds(1);
+  bool m_disable_all_transmissions= false;
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();
