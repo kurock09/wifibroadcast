@@ -16,6 +16,6 @@ MY_WIFI_CARD=$1
 sh ./enable_monitor_mode.sh $MY_WIFI_CARD
 
 # Should work on most card(s) - 5180Mhz at HT20 (20Mhz channel width)
-sh ./set_default_freq.sh $MY_WIFI_CARD 5180
+sh ./set_freq.sh $MY_WIFI_CARD 5180 HT20
 
 
