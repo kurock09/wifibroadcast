@@ -9,6 +9,6 @@ MY_WIFI_CARD=$1
 
 sh ./enable_monitor_mode.sh $MY_WIFI_CARD
 
-sh ./enable_monitor_mode.sh $MY_WIFI_CARD
+sh ./set_default_freq.sh $MY_WIFI_CARD
 
 
