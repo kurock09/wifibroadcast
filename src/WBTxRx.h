@@ -146,6 +146,8 @@ class WBTxRx {
      int last_received_packet_mcs_index=-1;
      // channel width (20Mhz or 40Mhz) on the most recent received okay data packet, if the card supports reporting it
      int last_received_packet_channel_width=-1;
+     // complicated but important metric in our case
+     int16_t curr_big_gaps_counter=-1;
    };
    struct RxStatsPerCard{
      RSSIForWifiCard rssi_for_wifi_card{};

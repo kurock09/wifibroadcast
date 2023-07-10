@@ -452,6 +452,7 @@ WBTxRx::TxStats WBTxRx::get_tx_stats() {
 WBTxRx::RxStats WBTxRx::get_rx_stats() {
   WBTxRx::RxStats ret=m_rx_stats;
   ret.curr_packet_loss=m_seq_nr_helper.get_current_loss_percent();
+  ret.curr_big_gaps_counter=m_seq_nr_helper.get_current_gaps_counter();
   return ret;
 }
 
