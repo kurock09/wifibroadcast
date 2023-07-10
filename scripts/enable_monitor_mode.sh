@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Simple script to enable monitor mode on a wifi card
+# Intended to be used with executables/example_hello.cpp
 
 # Write your own card name here !!
 MY_WIFI_CARD=$1
