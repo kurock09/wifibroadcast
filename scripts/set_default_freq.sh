@@ -6,8 +6,8 @@
 # wifi card is first param
 MY_WIFI_CARD=$1
 
-# Should work on most card(s) - 5180Mhz at HT20 (20Mhz channel width)
-MY_WIFI_FREQ_MHZ=5180
+# frequency is second param
+MY_WIFI_FREQ_MHZ=$2
 
 echo "Setting $MY_WIFI_CARD to $MY_WIFI_FREQ_MHZ"
 
