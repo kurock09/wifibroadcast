@@ -164,6 +164,9 @@ class WBTxRx {
    int get_curr_active_tx_card_idx();
    // Used by OpenHD to do "passive mode" on a GCS
    void set_passive_mode(bool passive);
+   // Used by OpenHD on the ground to notify the user of disconnecting card(s)
+   // (Hints at power issues)
+   bool get_card_has_disconnected(int card_idx);
   public:
    // Session key used for encrypting outgoing packets
    struct SessionKeyPacket{
@@ -229,6 +232,7 @@ class WBTxRx {
   std::chrono::steady_clock::time_point m_last_highest_rssi_adjustment_tp=std::chrono::steady_clock::now();
   static constexpr auto HIGHEST_RSSI_ADJUSTMENT_INTERVAL=std::chrono::seconds(1);
   bool m_disable_all_transmissions= false;
+  std::vector<bool> m_card_is_disconnected;
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();

@@ -19,9 +19,11 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
   m_console->debug(" cards:{} set_direction:{}",StringHelper::string_vec_as_string(m_wifi_cards),m_options.set_direction);
   m_receive_pollfds.resize(m_wifi_cards.size());
   m_rx_stats_per_card.resize(m_wifi_cards.size());
+  m_card_is_disconnected.resize(m_wifi_cards.size());
   for(int i=0;i<m_wifi_cards.size();i++){
     auto tmp=std::make_shared<seq_nr::Helper>();
     m_seq_nr_per_card.push_back(tmp);
+    m_card_is_disconnected[i]=false;
   }
   for(int i=0;i<m_wifi_cards.size();i++){
     auto wifi_card=m_wifi_cards[i];
@@ -152,6 +154,7 @@ void WBTxRx::loop_receive_packets() {
         if(keep_receiving){
           // we should only get errors here if the card is disconnected
           m_n_receiver_errors++;
+          m_card_is_disconnected[i]=true;
           // limit logging here
           const auto elapsed=std::chrono::steady_clock::now()-m_last_receiver_error_log;
           if(elapsed>std::chrono::seconds(1)){
@@ -474,4 +477,11 @@ int WBTxRx::get_curr_active_tx_card_idx() {
 
 void WBTxRx::set_passive_mode(bool passive) {
   m_disable_all_transmissions=passive;
+}
+
+bool WBTxRx::get_card_has_disconnected(int card_idx) {
+  if(card_idx>=m_wifi_cards.size()){
+    return true;
+  }
+  return m_card_is_disconnected[card_idx];
 }
