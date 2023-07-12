@@ -23,7 +23,7 @@
 // We have different requirements on packet loss and/or packet reordering for this type of data stream.
 // Adds sizeof(FECDisabledHeader) ovverhead
 // received packets are quaranteed to be forwarded with the following properties:
-// No doplicated
+// No doplicates
 // packets out of order are possible
 
 struct FECDisabledHeader{
@@ -38,7 +38,7 @@ class FECDisabledEncoder {
   typedef std::function<void(const uint8_t *payload, const std::size_t payloadSize)>
       OUTPUT_DATA_CALLBACK;
   OUTPUT_DATA_CALLBACK outputDataCallback;
-  void encodePacket(const uint8_t *buf, const size_t size) {
+  std::vector<uint8_t> encode_packet_buffer(const uint8_t *buf, const size_t size){
     std::vector<uint8_t> tmp(size+sizeof(FECDisabledHeader));
     FECDisabledHeader hdr{};
     hdr.sequence_number=currPacketIndex;
@@ -46,11 +46,16 @@ class FECDisabledEncoder {
     memcpy(tmp.data(),(uint8_t*)&hdr,sizeof(FECDisabledHeader));
     // copy the payload
     memcpy(tmp.data()+sizeof(FECDisabledHeader),buf,size);
-    outputDataCallback(tmp.data(),tmp.size());
     currPacketIndex++;
     if (currPacketIndex == std::numeric_limits<uint64_t>::max()) {
       currPacketIndex = 0;
     }
+    return tmp;
+  }
+  // encodes a packet and then forwards it via the cb
+  void encode_packet_cb(const uint8_t *buf, const size_t size) {
+    const auto packet= encode_packet_buffer(buf,size);
+    outputDataCallback(packet.data(),packet.size());
   }
  private:
   uint64_t currPacketIndex = 0;

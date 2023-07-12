@@ -47,12 +47,13 @@ WBStreamTx::~WBStreamTx() {
   }
 }
 
-bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet) {
+bool WBStreamTx::try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet,int n_injections) {
   assert(!options.enable_fec);
   m_n_input_packets++;
   m_count_bytes_data_provided+=packet->size();
   auto item=std::make_shared<EnqueuedPacket>();
   item->data=std::move(packet);
+  item->n_injections=n_injections;
   const bool res= m_packet_queue->try_enqueue(item);
   if(!res){
     m_n_dropped_packets++;
@@ -149,7 +150,11 @@ void WBStreamTx::loop_process_data() {
 }
 
 void WBStreamTx::process_enqueued_packet(const WBStreamTx::EnqueuedPacket& packet) {
-  m_fec_disabled_encoder->encodePacket(packet.data->data(),packet.data->size());
+  auto buff=m_fec_disabled_encoder->encode_packet_buffer(packet.data->data(),packet.data->size());
+  for(int i=0;i<packet.n_injections;i++){
+    send_packet(buff.data(),buff.size());
+  }
+  //m_fec_disabled_encoder->encode_packet_cb(packet.data->data(),packet.data->size());
 }
 
 void WBStreamTx::process_enqueued_block(const WBStreamTx::EnqueuedBlock& block) {

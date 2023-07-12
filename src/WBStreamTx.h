@@ -50,9 +50,14 @@ class WBStreamTx {
    * Guaranteed to return immediately.
    * This method is not thread-safe.
    * @param packet the packet (data) to enqueue
+   * @param n_injections: This is especially for openhd - we have the issue that the telemetry uplink is incredibly lossy
+   * due to the (video) tx talking over the ground telemetry tx. However, FEC is not really suited for telemetry -
+   * therefore, we have a simple duplicate (aka inject the same packet more than once) feature.
+   * Since the FECDisabled impl. handles packet duplicates, duplicates only increase the likeliness of a specific packet being received, and
+   * are not forwarded multiple times. By default, don't do any packet duplication (1)
    * @return true on success (space in the packet queue), false otherwise
    */
-  bool try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet);
+  bool try_enqueue_packet(std::shared_ptr<std::vector<uint8_t>> packet,int n_injections=1);
   /**
    * Enqueue a block (most likely a frame) to be processed, FEC needs to be enabled in this mode.
    * Guaranteed to return immediately.
@@ -93,6 +98,7 @@ class WBStreamTx {
   struct EnqueuedPacket {
     std::chrono::steady_clock::time_point enqueue_time_point=std::chrono::steady_clock::now();
     std::shared_ptr<std::vector<uint8_t>> data;
+    int n_injections;
   };
   struct EnqueuedBlock {
     std::chrono::steady_clock::time_point enqueue_time_point=std::chrono::steady_clock::now();
