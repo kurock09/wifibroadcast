@@ -126,6 +126,8 @@ class WBTxRx {
      int64_t n_injected_bytes=0;
      // tx errors, first sign the tx can't keep up with the provided bitrate
      int32_t count_tx_injections_error_hint=0;
+     int curr_packets_per_second=-1;
+     int curr_bytes_per_second=-1;
    };
    struct RxStats{
      // Total count of received packets / bytes - can be from another wb tx, but also from someone else using wifi
@@ -233,6 +235,8 @@ class WBTxRx {
   static constexpr auto HIGHEST_RSSI_ADJUSTMENT_INTERVAL=std::chrono::seconds(1);
   bool m_disable_all_transmissions= false;
   std::vector<bool> m_card_is_disconnected;
+  BitrateCalculator m_tx_bitrate_calculator{};
+  PacketsPerSecondCalculator m_tx_packets_per_second_calculator{};
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();
