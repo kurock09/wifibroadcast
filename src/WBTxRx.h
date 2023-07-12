@@ -127,7 +127,7 @@ class WBTxRx {
      // tx errors, first sign the tx can't keep up with the provided bitrate
      int32_t count_tx_injections_error_hint=0;
      int curr_packets_per_second=-1;
-     int curr_bytes_per_second=-1;
+     int curr_bits_per_second=-1;
    };
    struct RxStats{
      // Total count of received packets / bytes - can be from another wb tx, but also from someone else using wifi
