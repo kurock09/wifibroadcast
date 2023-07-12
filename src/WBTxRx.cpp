@@ -454,7 +454,7 @@ void WBTxRx::tx_threadsafe_update_radiotap_header(const RadiotapHeader::UserSele
 
 WBTxRx::TxStats WBTxRx::get_tx_stats() {
     m_tx_stats.curr_bits_per_second=m_tx_bitrate_calculator.get_last_or_recalculate(m_tx_stats.n_injected_bytes);
-    m_tx_stats.curr_packets_per_second=m_tx_bitrate_calculator.get_last_or_recalculate(m_tx_stats.n_injected_packets);
+    m_tx_stats.curr_packets_per_second=m_tx_packets_per_second_calculator.get_last_or_recalculate(m_tx_stats.n_injected_packets);
     return m_tx_stats;
 }
 
