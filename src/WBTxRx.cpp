@@ -487,3 +487,13 @@ bool WBTxRx::get_card_has_disconnected(int card_idx) {
   }
   return m_card_is_disconnected[card_idx];
 }
+std::string WBTxRx::tx_stats_to_string(const WBTxRx::TxStats& data) {
+  return fmt::format("TxStats[injected packets:{} bytes:{} tx errors:{} pps:{} bps:{}]",
+                     data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint,
+                     data.curr_packets_per_second,data.curr_bits_per_second);
+}
+std::string WBTxRx::rx_stats_to_string(const WBTxRx::RxStats& data) {
+  return fmt::format("RxStats[packets any:{} session:{} decrypted:{} Loss:{} pps:{} bps:{}]",
+                         data.count_p_any,data.n_received_valid_session_key_packets,data.count_p_valid,
+                         data.curr_packet_loss,data.curr_packets_per_second,data.curr_bytes_per_second);
+}

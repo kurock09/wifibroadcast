@@ -184,6 +184,8 @@ class WBTxRx {
    // and we use some bytes of that for encryption / packet validation
    static constexpr const auto MAX_PACKET_PAYLOAD_SIZE=RAW_WIFI_FRAME_MAX_PAYLOAD_SIZE-sizeof(uint64_t)-crypto_aead_chacha20poly1305_ABYTES;
    static_assert(MAX_PACKET_PAYLOAD_SIZE==1449);
+   static std::string tx_stats_to_string(const TxStats& data);
+   static std::string rx_stats_to_string(const RxStats& data);
  private:
   const Options m_options;
   std::shared_ptr<spdlog::logger> m_console;
@@ -256,15 +258,11 @@ class WBTxRx {
 };
 
 static std::ostream& operator<<(std::ostream& strm, const WBTxRx::TxStats& data){
-  auto tmp=fmt::format("TxStats[injected packets:{} bytes:{} tx errors:{}]",data.n_injected_packets,data.n_injected_bytes,data.count_tx_injections_error_hint);
-  strm<<tmp;
+  strm<<WBTxRx::tx_stats_to_string(data);
   return strm;
 }
 static std::ostream& operator<<(std::ostream& strm, const WBTxRx::RxStats& data){
-  auto tmp=fmt::format("RxStats[packets any:{} session:{} decrypted:{} Loss:{} pps:{} bps:{}]",
-                         data.count_p_any,data.n_received_valid_session_key_packets,data.count_p_valid,
-                         data.curr_packet_loss,data.curr_packets_per_second,data.curr_bytes_per_second);
-  strm<<tmp;
+  strm<<WBTxRx::rx_stats_to_string(data);
   return strm;
 }
 
