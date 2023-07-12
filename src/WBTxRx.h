@@ -141,7 +141,7 @@ class WBTxRx {
      // If no data arrives for a long time, they report -1 instead of 0
      int32_t curr_packet_loss=-1;
      int32_t curr_packets_per_second=-1;
-     int32_t curr_bytes_per_second=-1;
+     int32_t curr_bits_per_second=-1;
      // n received valid session key packets
      int n_received_valid_session_key_packets=0;
      // mcs index on the most recent okay data packet, if the card supports reporting it
@@ -239,6 +239,8 @@ class WBTxRx {
   std::vector<bool> m_card_is_disconnected;
   BitrateCalculator m_tx_bitrate_calculator{};
   PacketsPerSecondCalculator m_tx_packets_per_second_calculator{};
+  BitrateCalculator m_rx_bitrate_calculator{};
+  PacketsPerSecondCalculator m_rx_packets_per_second_calculator{};
  private:
   // we announce the session key in regular intervals if data is currently being injected (tx_ is called)
   void announce_session_key_if_needed();
