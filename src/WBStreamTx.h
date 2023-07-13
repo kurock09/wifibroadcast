@@ -50,7 +50,7 @@ class WBStreamTx {
    * Guaranteed to return immediately.
    * This method is not thread-safe.
    * @param packet the packet (data) to enqueue
-   * @param n_injections: This is especially for openhd - we have the issue that the telemetry uplink is incredibly lossy
+   * @param n_injections: This is especially for openhd telemetry - we have the issue that the telemetry uplink is incredibly lossy
    * due to the (video) tx talking over the ground telemetry tx. However, FEC is not really suited for telemetry -
    * therefore, we have a simple duplicate (aka inject the same packet more than once) feature.
    * Since the FECDisabled impl. handles packet duplicates, duplicates only increase the likeliness of a specific packet being received, and
