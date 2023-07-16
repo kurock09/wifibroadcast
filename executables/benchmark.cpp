@@ -95,8 +95,9 @@ void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
 
 
 // Simple benchmark for encryption / decryption performance
-void benchmark_crypt(const Options &options,const bool encrypt,const bool packet_validation_only) {
+void benchmark_crypt(const Options &options,const bool packet_validation_only) {
   assert(options.benchmarkType == BENCHMARK_ENCRYPT || options.benchmarkType == BENCHMARK_DECRYPT);
+  const bool encrypt=options.benchmarkType==BENCHMARK_ENCRYPT;
   Encryptor encryptor{std::nullopt,packet_validation_only};
   Decryptor decryptor{std::nullopt,packet_validation_only};
   std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};
@@ -135,6 +136,7 @@ void benchmark_crypt(const Options &options,const bool encrypt,const bool packet
           tag="Decrypt";
       }
   }
+  std::cout<<"Benchmarking "<<tag<<std::endl;
   PacketizedBenchmark packetizedBenchmark(tag, 1.0); // roughly 1:1
   DurationBenchmark durationBenchmark(tag, options.PACKET_SIZE);
 
@@ -210,12 +212,9 @@ int main(int argc, char *const *argv) {
 	  std::cout << "Unimplemented"<<std::endl;
 	  break;
 	case BENCHMARK_ENCRYPT:
-          benchmark_crypt(options, false, false);
-          benchmark_crypt(options, false, true);
-	  break;
         case BENCHMARK_DECRYPT:
-	  benchmark_crypt(options, true, false);
-          benchmark_crypt(options, true, true);
+          benchmark_crypt(options, false);
+          benchmark_crypt(options, true);
 	  break;
   }
   return 0;
