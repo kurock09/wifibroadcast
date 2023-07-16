@@ -22,8 +22,11 @@ static const std::array<unsigned char, crypto_box_SEEDBYTES> DEFAULT_ENCRYPTION_
 
 class Encryptor {
  public:
-  // enable a default deterministic encryption key by using std::nullopt
-  // else, pass path to file with encryption keys
+  /**
+   *
+   * @param keypair encryption key, otherwise enable a default deterministic encryption key by using std::nullopt
+   * @param DISABLE_ENCRYPTION_FOR_PERFORMANCE only validate, do not encrypt (less CPU usage)
+   */
   explicit Encryptor(std::optional<std::string> keypair, const bool DISABLE_ENCRYPTION_FOR_PERFORMANCE = false)
       : DISABLE_ENCRYPTION_FOR_PERFORMANCE(DISABLE_ENCRYPTION_FOR_PERFORMANCE) {
     if (keypair == std::nullopt) {

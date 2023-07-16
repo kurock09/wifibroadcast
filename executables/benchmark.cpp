@@ -59,7 +59,7 @@ struct Options {
   int FEC_PERCENTAGE = 20; // not used when testing encryption / decryption
   int benchmarkType = BENCHMARK_FEC_ENCODE;
   // How long the benchmark will run
-  int benchmarkTimeSeconds = 60;
+  int benchmarkTimeSeconds = 10;
 };
 
 void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
@@ -95,10 +95,10 @@ void benchmark_fec_encode(const Options &options, bool printBlockTime = false) {
 
 
 // Simple benchmark for encryption / decryption performance
-void benchmark_crypt(const Options &options,const bool encrypt) {
+void benchmark_crypt(const Options &options,const bool encrypt,const bool packet_validation_only) {
   assert(options.benchmarkType == BENCHMARK_ENCRYPT || options.benchmarkType == BENCHMARK_DECRYPT);
-  Encryptor encryptor{std::nullopt};
-  Decryptor decryptor{std::nullopt};
+  Encryptor encryptor{std::nullopt,packet_validation_only};
+  Decryptor decryptor{std::nullopt,packet_validation_only};
   std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};
   std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{};
   encryptor.makeNewSessionKey(sessionKeyNonce, sessionKeyData);
@@ -197,10 +197,12 @@ int main(int argc, char *const *argv) {
 	  std::cout << "Unimplemented"<<std::endl;
 	  break;
 	case BENCHMARK_ENCRYPT:
-          benchmark_crypt(options, false);
+          benchmark_crypt(options, false, false);
+          benchmark_crypt(options, false, true);
 	  break;
         case BENCHMARK_DECRYPT:
-	  benchmark_crypt(options, true);
+	  benchmark_crypt(options, true, false);
+          benchmark_crypt(options, true, true);
 	  break;
   }
   return 0;
