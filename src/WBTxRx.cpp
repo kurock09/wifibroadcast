@@ -38,8 +38,8 @@ WBTxRx::WBTxRx(std::vector<std::string> wifi_cards,Options options1)
     m_receive_pollfds[i].fd = fd;
     m_receive_pollfds[i].events = POLLIN;
   }
-  m_encryptor=std::make_unique<Encryptor>(std::nullopt);
-  m_decryptor=std::make_unique<Decryptor>(std::nullopt);
+  m_encryptor=std::make_unique<Encryptor>(std::nullopt,m_options.disable_encryption);
+  m_decryptor=std::make_unique<Decryptor>(std::nullopt,m_options.disable_encryption);
   m_encryptor->makeNewSessionKey(m_tx_sess_key_packet.sessionKeyNonce,
                                 m_tx_sess_key_packet.sessionKeyData);
   // next session key in delta ms if packets are being fed
