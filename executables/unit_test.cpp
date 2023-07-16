@@ -137,7 +137,7 @@ static void test(const bool useGeneratedFiles,bool message_signing_only) {
   for (uint64_t nonce = 0; nonce < 20; nonce++) {
         const auto data = GenericHelper::createRandomDataBuffer(FEC_PACKET_MAX_PAYLOAD_SIZE);
         const auto enrypted_wrong_sign=std::make_shared<std::vector<uint8_t>>();
-        enrypted_wrong_sign->resize(data.size()+encryptor.get_additional_payload_size());
+        enrypted_wrong_sign->resize(data.size()+ENCRYPTION_ADDITIONAL_VALIDATION_DATA);
         memcpy(enrypted_wrong_sign->data(),data.data(),data.size());
         const auto decrypted = decryptor.decrypt3(nonce, enrypted_wrong_sign->data(), enrypted_wrong_sign->size());
         assert(decrypted== nullptr);

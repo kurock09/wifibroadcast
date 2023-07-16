@@ -20,6 +20,10 @@
 // create deterministic rx and tx keys
 static const std::array<unsigned char, crypto_box_SEEDBYTES> DEFAULT_ENCRYPTION_SEED = {0};
 
+static_assert(crypto_onetimeauth_BYTES==crypto_aead_chacha20poly1305_ABYTES);
+// Encryption (or packet validation) adds this many bytes to the end of the message
+static constexpr auto ENCRYPTION_ADDITIONAL_VALIDATION_DATA=crypto_aead_chacha20poly1305_ABYTES;
+
 class Encryptor {
  public:
   /**
@@ -68,10 +72,10 @@ class Encryptor {
    */
   int encrypt2(const uint64_t nonce,const uint8_t *src,std::size_t src_len,uint8_t* dest){
     if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
-      const auto sign= calculate_msg_sign(src,src_len);
       memcpy(dest,src, src_len);
-      memcpy(dest+src_len,sign.data(),sign.size());
-      return src_len+sign.size();
+      uint8_t* sign=dest+src_len;
+      crypto_onetimeauth(sign,src,src_len,session_key.data());
+      return src_len+crypto_onetimeauth_BYTES;
     }
     long long unsigned int ciphertext_len;
     crypto_aead_chacha20poly1305_encrypt(dest, &ciphertext_len,
@@ -81,27 +85,12 @@ class Encryptor {
                                          (uint8_t *) &nonce, session_key.data());
     return (int)ciphertext_len;
   }
+  // For easy use - returns a buffer including (encrypted) payload plus validation data
   std::shared_ptr<std::vector<uint8_t>> encrypt3(const uint64_t nonce,const uint8_t *src,std::size_t src_len){
-    auto ret=std::make_shared<std::vector<uint8_t>>(src_len + get_additional_payload_size());
+    auto ret=std::make_shared<std::vector<uint8_t>>(src_len + ENCRYPTION_ADDITIONAL_VALIDATION_DATA);
     const auto size=encrypt2(nonce,src,src_len,ret->data());
     assert(size==ret->size());
     return ret;
-  }
-  std::vector<uint8_t> calculate_msg_sign(const uint8_t *src,std::size_t src_len){
-    assert(DISABLE_ENCRYPTION_FOR_PERFORMANCE);
-    // calculate the message signing
-    std::vector<uint8_t> sign;
-    //sign.resize(crypto_auth_hmacsha256_BYTES);
-    sign.resize(crypto_onetimeauth_BYTES);
-    crypto_onetimeauth(sign.data(),src,src_len,session_key.data());
-    //crypto_auth_hmacsha256(sign.data(),src,src_len,session_key.data());
-    return sign;
-  }
-  int get_additional_payload_size() const{
-    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
-      return crypto_onetimeauth_BYTES;
-    }
-    return crypto_aead_chacha20poly1305_ABYTES;
   }
  private:
   // tx->rx keypair
@@ -169,7 +158,7 @@ class Decryptor {
     return false;
   }
 
-  int decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest){
+  /*int decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest){
     unsigned long long mlen;
     int res=crypto_aead_chacha20poly1305_decrypt(dest, &mlen,
                                                    nullptr,
@@ -203,6 +192,47 @@ class Decryptor {
     //const int res=crypto_auth_hmacsha256_verify(sign,msg,payload_size,session_key.data());
     const int res=crypto_onetimeauth_verify(sign,msg,payload_size,session_key.data());
     return res==0;
+  }*/
+  ////       ----------------
+  /**
+   * Decrypt (or validate only if encryption is disabled) the given message
+   * and writes the original message content into dest.
+   * Returns true on success, false otherwise (false== the message is not a valid message)
+   */
+  bool decrypt2(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size,uint8_t* dest){
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      const auto payload_size=encrypted_size-crypto_onetimeauth_BYTES;
+      assert(payload_size>0);
+      const uint8_t* sign=encrypted+payload_size;
+      //const int res=crypto_auth_hmacsha256_verify(sign,msg,payload_size,session_key.data());
+      const int res=crypto_onetimeauth_verify(sign,encrypted,payload_size,session_key.data());
+      if(res!=-1){
+        memcpy(dest,encrypted,payload_size);
+        return true;
+      }
+      return false;
+    }
+    unsigned long long mlen;
+    int res=crypto_aead_chacha20poly1305_decrypt(dest, &mlen,
+                                                   nullptr,
+                                                   encrypted, encrypted_size,
+                                                   nullptr,0,
+                                                   (uint8_t *) (&nonce), session_key.data());
+    return res!=-1;
+  }
+  std::shared_ptr<std::vector<uint8_t>> decrypt3(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size){
+    auto ret=std::make_shared<std::vector<uint8_t>>(encrypted_size - get_additional_payload_size());
+    const auto res= decrypt2(nonce,encrypted,encrypted_size,ret->data());
+    if(res){
+      return ret;
+    }
+    return nullptr;
+  }
+  int get_additional_payload_size() const{
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      return crypto_onetimeauth_BYTES;
+    }
+    return crypto_aead_chacha20poly1305_ABYTES;
   }
 };
 
