@@ -108,13 +108,13 @@ static void test_fec_stream_random_bs_fs_overhead_dropped(){
 
 namespace TestEncryption {
 
-static void test(const bool useGeneratedFiles) {
+static void test(const bool useGeneratedFiles,bool message_signing_only) {
   std::cout << "Using generated keypair (default seed otherwise):" << (useGeneratedFiles ? "y" : "n") << "\n";
   std::optional<std::string> encKey = useGeneratedFiles ? std::optional<std::string>("gs.key") : std::nullopt;
   std::optional<std::string> decKey = useGeneratedFiles ? std::optional<std::string>("drone.key") : std::nullopt;
 
-  Encryptor encryptor{encKey};
-  Decryptor decryptor{decKey};
+  Encryptor encryptor{encKey,message_signing_only};
+  Decryptor decryptor{decKey,message_signing_only};
   struct SessionStuff{
     std::array<uint8_t, crypto_box_NONCEBYTES> sessionKeyNonce{};  // random data
     std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES + crypto_box_MACBYTES> sessionKeyData{};
@@ -132,6 +132,15 @@ static void test(const bool useGeneratedFiles) {
 	const auto decrypted = decryptor.decrypt3(nonce, encrypted->data(), encrypted->size());
 	//assert(decrypted != std::nullopt);
 	assert(GenericHelper::compareVectors(data, *decrypted) == true);
+  }
+  // and make sure we don't let invalid packets thrugh
+  for (uint64_t nonce = 0; nonce < 20; nonce++) {
+        const auto data = GenericHelper::createRandomDataBuffer(FEC_PACKET_MAX_PAYLOAD_SIZE);
+        const auto enrypted_wrong_sign=std::make_shared<std::vector<uint8_t>>();
+        enrypted_wrong_sign->resize(data.size()+encryptor.get_additional_payload_size());
+        memcpy(enrypted_wrong_sign->data(),data.data(),data.size());
+        const auto decrypted = decryptor.decrypt3(nonce, enrypted_wrong_sign->data(), enrypted_wrong_sign->size());
+        assert(decrypted== nullptr);
   }
   std::cout << "encryption test passed\n";
 }
@@ -168,8 +177,10 @@ int main(int argc, char *argv[]) {
 	}
 	if (test_mode == 0 || test_mode == 2) {
 	  std::cout << "Testing Encryption"<<std::endl;
-	  TestEncryption::test(false);
-	  TestEncryption::test(true);
+	  TestEncryption::test(false, false);
+          TestEncryption::test(false, true);
+	  TestEncryption::test(true, false);
+          //TestEncryption::test(true, true);
 	}
   } catch (std::runtime_error &e) {
 	std::cerr << "Error: " << std::string(e.what());

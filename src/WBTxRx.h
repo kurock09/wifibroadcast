@@ -64,6 +64,7 @@ class WBTxRx {
     // interval in which the session key packet is sent out - if no data is fed to the TX,
     // no session key is sent until data is fed.
     std::chrono::milliseconds session_key_packet_interval=std::chrono::seconds(1);
+    bool disable_encryption= false;
   };
   explicit WBTxRx(std::vector<std::string> wifi_cards,Options options1);
   WBTxRx(const WBTxRx &) = delete;

@@ -67,10 +67,33 @@ class Encryptor {
     return (int)ciphertext_len;
   }
   std::shared_ptr<std::vector<uint8_t>> encrypt3(const uint64_t nonce,const uint8_t *src,std::size_t src_len){
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      const auto sign= calculate_msg_sign(src,src_len);
+      auto ret=std::make_shared<std::vector<uint8_t>>(src_len + sign.size());
+      memcpy(ret->data(),src, src_len);
+      memcpy(ret->data()+src_len,sign.data(),sign.size());
+      return ret;
+    }
     auto ret=std::make_shared<std::vector<uint8_t>>(src_len + crypto_aead_chacha20poly1305_ABYTES);
     const auto size=encrypt2(nonce,src,src_len,ret->data());
     assert(size==ret->size());
     return ret;
+  }
+  std::vector<uint8_t> calculate_msg_sign(const uint8_t *src,std::size_t src_len){
+    assert(DISABLE_ENCRYPTION_FOR_PERFORMANCE);
+    // calculate the message signing
+    std::vector<uint8_t> sign;
+    //sign.resize(crypto_auth_hmacsha256_BYTES);
+    sign.resize(crypto_onetimeauth_BYTES);
+    crypto_onetimeauth(sign.data(),src,src_len,session_key.data());
+    //crypto_auth_hmacsha256(sign.data(),src,src_len,session_key.data());
+    return sign;
+  }
+  int get_additional_payload_size() const{
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      return crypto_onetimeauth_BYTES;
+    }
+    return crypto_aead_chacha20poly1305_ABYTES;
   }
  private:
   // tx->rx keypair
@@ -79,6 +102,7 @@ class Encryptor {
   std::array<uint8_t, crypto_aead_chacha20poly1305_KEYBYTES> session_key{};
   // use this one if you are worried about CPU usage when using encryption
   const bool DISABLE_ENCRYPTION_FOR_PERFORMANCE;
+  //static_assert(crypto_onetimeauth_BYTES);
 };
 
 class Decryptor {
@@ -147,10 +171,30 @@ class Decryptor {
     return res;
   }
   std::shared_ptr<std::vector<uint8_t>> decrypt3(const uint64_t& nonce,const uint8_t* encrypted,int encrypted_size){
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      if(check_message_sign(encrypted,encrypted_size)){
+        auto ret=std::make_shared<std::vector<uint8_t>>(encrypted,encrypted+encrypted_size-crypto_onetimeauth_BYTES);
+        return ret;
+      }else{
+        return nullptr;
+      }
+    }
     auto ret=std::make_shared<std::vector<uint8_t>>(encrypted_size - crypto_aead_chacha20poly1305_ABYTES);
     int res= decrypt2(nonce,encrypted,encrypted_size,ret->data());
-    //assert(res==ret->size());
-    return ret;
+    if(res!=-1){
+      return ret;
+    }
+    return nullptr;
+  }
+  bool check_message_sign(const uint8_t* msg,int msg_size){
+    assert(DISABLE_ENCRYPTION_FOR_PERFORMANCE);
+    //const auto payload_size=msg_size-crypto_auth_hmacsha256_BYTES;
+    const auto payload_size=msg_size-crypto_onetimeauth_BYTES;
+    assert(payload_size>0);
+    const uint8_t* sign=msg+payload_size;
+    //const int res=crypto_auth_hmacsha256_verify(sign,msg,payload_size,session_key.data());
+    const int res=crypto_onetimeauth_verify(sign,msg,payload_size,session_key.data());
+    return res==0;
   }
 };
 
