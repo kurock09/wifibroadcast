@@ -60,7 +60,19 @@ class Encryptor {
       throw std::runtime_error("Unable to make session key!");
     }
   }
+  /**
+   * Encrypt the given message of size @param src_len
+   * (Or if encryption is enable, only calculate the message sign)
+   * and write the (encrypted) data and validation data into dest.
+   * Returns written data size (msg payload plus sign data)
+   */
   int encrypt2(const uint64_t nonce,const uint8_t *src,std::size_t src_len,uint8_t* dest){
+    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
+      const auto sign= calculate_msg_sign(src,src_len);
+      memcpy(dest,src, src_len);
+      memcpy(dest+src_len,sign.data(),sign.size());
+      return src_len+sign.size();
+    }
     long long unsigned int ciphertext_len;
     crypto_aead_chacha20poly1305_encrypt(dest, &ciphertext_len,
                                          src, src_len,
@@ -70,14 +82,7 @@ class Encryptor {
     return (int)ciphertext_len;
   }
   std::shared_ptr<std::vector<uint8_t>> encrypt3(const uint64_t nonce,const uint8_t *src,std::size_t src_len){
-    if(DISABLE_ENCRYPTION_FOR_PERFORMANCE){
-      const auto sign= calculate_msg_sign(src,src_len);
-      auto ret=std::make_shared<std::vector<uint8_t>>(src_len + sign.size());
-      memcpy(ret->data(),src, src_len);
-      memcpy(ret->data()+src_len,sign.data(),sign.size());
-      return ret;
-    }
-    auto ret=std::make_shared<std::vector<uint8_t>>(src_len + crypto_aead_chacha20poly1305_ABYTES);
+    auto ret=std::make_shared<std::vector<uint8_t>>(src_len + get_additional_payload_size());
     const auto size=encrypt2(nonce,src,src_len,ret->data());
     assert(size==ret->size());
     return ret;
