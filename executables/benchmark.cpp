@@ -121,8 +121,21 @@ void benchmark_crypt(const Options &options,const bool encrypt,const bool packet
           encrypted_packets_buff.push_back(encryptedPacket);
       }
   }
-  const auto tag=encrypt ? "Encrypt" : "Decrypt";
-  PacketizedBenchmark packetizedBenchmark(benchmarkTypeReadable(options.benchmarkType), 1.0); // roughly 1:1
+  std::string tag;
+  if(encrypt){
+      if(packet_validation_only){
+          tag="Calc Validation";
+      }else{
+          tag="Encrypt";
+      }
+  }else{
+      if(packet_validation_only){
+          tag="Validate";
+      }else{
+          tag="Decrypt";
+      }
+  }
+  PacketizedBenchmark packetizedBenchmark(tag, 1.0); // roughly 1:1
   DurationBenchmark durationBenchmark(tag, options.PACKET_SIZE);
 
   const auto testBegin = std::chrono::steady_clock::now();
