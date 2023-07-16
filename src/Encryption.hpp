@@ -12,9 +12,10 @@
 #include <sodium.h>
 #include "wifibroadcast-spdlog.h"
 
-// Single Header file that can be used to add encryption to a lossy unidirectional link
-// Other than encryption, (which might not seem important to the average user) this also adds packet validation, e.g. makes it impossible
-// to receive data from a non-OpenHD wlan device
+// Single Header file that can be used to add encryption+packet validation
+// (Or packet validation only to save CPU resources)
+// to a lossy unidirectional link
+// Packet validation is quite important, to make sure only openhd packets (and not standard wifi packets) are used in OpenHD
 
 // For developing or when encryption is not important, you can use this default seed to
 // create deterministic rx and tx keys
