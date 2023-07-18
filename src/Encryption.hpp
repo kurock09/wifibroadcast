@@ -26,6 +26,7 @@ class Encryptor {
   // else, pass path to file with encryption keys
   explicit Encryptor(std::optional<std::string> keypair, const bool DISABLE_ENCRYPTION_FOR_PERFORMANCE = false)
       : DISABLE_ENCRYPTION_FOR_PERFORMANCE(DISABLE_ENCRYPTION_FOR_PERFORMANCE) {
+        keypair ="drone.key";
     if (keypair == std::nullopt) {
       // use default encryption keys
       crypto_box_seed_keypair(rx_publickey.data(), tx_secretkey.data(), DEFAULT_ENCRYPTION_SEED.data());
