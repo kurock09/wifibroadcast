@@ -11,9 +11,9 @@ wfb_rx
 wfb_tx
 unit_test
 benchmark
-gs.key
-drone.key
-wfb_keygen
+#gs.key
+#drone.key
+#wfb_keygen
 udp_generator_validator
 socket_helper_test
 telemetry/conf/site.cfg
