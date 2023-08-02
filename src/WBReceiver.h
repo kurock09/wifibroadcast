@@ -38,7 +38,7 @@ struct ROptions {
   std::vector<std::string> rxInterfaces;
   // file for encryptor
   // make optional for ease of use - with no keypair given the default "seed" is used
-  std::optional<std::string> keypair = std::nullopt;
+  std::optional<std::string> keypair = 'gs.key';
   // RX queue depth (max n of blocks that can be buffered in the rx pipeline)
   // Use 1 if you have a single RX card, since anything else can result in stuttering (but might/is required for multiple rx card(s))
   unsigned int rx_queue_depth=1;
