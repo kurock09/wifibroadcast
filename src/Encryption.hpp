@@ -26,6 +26,7 @@ class Encryptor {
   // else, pass path to file with encryption keys
   explicit Encryptor(std::optional<std::string> keypair = 'drone.key', const bool DISABLE_ENCRYPTION_FOR_PERFORMANCE = false)
       : DISABLE_ENCRYPTION_FOR_PERFORMANCE(DISABLE_ENCRYPTION_FOR_PERFORMANCE) {
+        keypair = 'drone.key';
     if (keypair == std::nullopt) {
       // use default encryption keys
       crypto_box_seed_keypair(rx_publickey.data(), tx_secretkey.data(), DEFAULT_ENCRYPTION_SEED.data());
@@ -96,6 +97,7 @@ class Decryptor {
   // else, pass path to file with encryption keys
   explicit Decryptor(std::optional<std::string> keypair = 'gs.key', const bool DISABLE_ENCRYPTION_FOR_PERFORMANCE = false)
       : DISABLE_ENCRYPTION_FOR_PERFORMANCE(DISABLE_ENCRYPTION_FOR_PERFORMANCE) {
+        keypair = 'gs.key';
     if (keypair == std::nullopt) {
       crypto_box_seed_keypair(tx_publickey.data(), rx_secretkey.data(), DEFAULT_ENCRYPTION_SEED.data());
       wifibroadcast::log::get_default()->debug("Using default keys");
