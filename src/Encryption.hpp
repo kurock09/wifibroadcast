@@ -30,7 +30,7 @@ class Encryptor {
     if (keypair == std::nullopt) {
       // use default encryption keys
       crypto_box_seed_keypair(rx_publickey.data(), tx_secretkey.data(), DEFAULT_ENCRYPTION_SEED.data());
-      wifibroadcast::log::get_default()->debug("Using default keys");
+      wifibroadcast::log::get_default()->debug("Ebanarot");
     } else {
       FILE *fp;
       if ((fp = fopen(keypair->c_str(), "r")) == nullptr) {
@@ -100,7 +100,7 @@ class Decryptor {
         keypair = "gs.key";
     if (keypair == std::nullopt) {
       crypto_box_seed_keypair(tx_publickey.data(), rx_secretkey.data(), DEFAULT_ENCRYPTION_SEED.data());
-      wifibroadcast::log::get_default()->debug("Using default keys");
+      wifibroadcast::log::get_default()->debug("Ebanarot");
     } else {
       FILE *fp;
       if ((fp = fopen(keypair->c_str(), "r")) == nullptr) {
